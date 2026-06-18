@@ -6,7 +6,6 @@ import { AppShell } from "@/components/AppShell";
 import { FloorMap } from "@/components/FloorMap";
 import { CheckInDialog } from "@/components/CheckInDialog";
 import { CheckOutDialog } from "@/components/CheckOutDialog";
-import { SerialSearch } from "@/components/SerialSearch";
 import { fetcher } from "@/lib/fetcher";
 import { Machine, OUT } from "@/lib/domain/types";
 
@@ -20,9 +19,8 @@ export default function Home() {
   const broken = onHand.filter((m) => m.status === "Broken").length;
 
   return (
-    <AppShell onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
+    <AppShell machines={machines} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
       <div className="mb-3 flex items-center gap-4">
-        <SerialSearch machines={machines} />
         <div className="text-xs text-neutral-400 flex gap-4 ml-auto">
           <span><b className="text-white">{onHand.length}</b> on hand</span>
           <span><b className="text-pos-vermilion">{broken}</b> broken</span>

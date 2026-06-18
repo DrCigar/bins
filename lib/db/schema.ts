@@ -2,7 +2,7 @@ import { pgTable, serial, text, integer, timestamp, unique } from "drizzle-orm/p
 
 export const machines = pgTable("machines", {
   id: serial("id").primaryKey(),
-  serial: text("serial").notNull().unique(),
+  serial: text("serial").unique(),
   model: text("model").notNull(),
   role: text("role").notNull(),
   status: text("status").notNull(),

@@ -7,13 +7,19 @@ export type Role = (typeof ROLES)[number];
 export const STATUSES = ["New", "Used", "Broken"] as const;
 export type Status = (typeof STATUSES)[number];
 
-// location is a rack label (e.g. "A"), "Pre-Deployment", or "Out"
+// location is a rack label (e.g. "A"), an open area, or "Out" (checked out to a store)
 export const PRE_DEPLOYMENT = "Pre-Deployment";
+export const OUTBOUND = "Outbound";
 export const OUT = "Out";
+
+// Open staging areas (no fixed slots). Pre-Deployment is capped; Outbound is unlimited.
+export const OPEN_AREAS = [PRE_DEPLOYMENT, OUTBOUND] as const;
+export const isOpenArea = (location: string): boolean =>
+  location === PRE_DEPLOYMENT || location === OUTBOUND;
 
 export interface Machine {
   id: number;
-  serial: string;
+  serial: string | null;
   model: Model;
   role: Role;
   status: Status;

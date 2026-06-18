@@ -7,8 +7,9 @@ Drizzle ORM, and Neon Postgres.
 ## What it does
 
 - **Floor map** — 16 racks in their real positions, colored by how full they are. Tap a rack to open it.
-- **Rack detail** — 25 slots per rack (one register each); a separate Pre-Deployment area (up to 30).
-- **Check In** — add a register: serial, model (Matsuda / Hanasis / Yunos), role (Primary/Secondary), status (New/Used/Broken), notes, and where to place it.
+- **Rack detail** — 25 slots per rack (one register each); plus two open areas: Pre-Deployment (up to 30) and Outbound (unlimited). Both count as on-hand.
+- **Check In** — add a register: serial (optional — the slot blinks a warning until one is entered), model (Matsuda / Hanasis / Yunos), role (Primary/Secondary), status (New/Used/Broken), notes, and where to place it.
+- **Search by serial** — in the top bar on every screen; jumps to the unit's slot.
 - **Check Out** — pick a model; the app suggests the **oldest** units first (by the date encoded in the serial) and you send one to Pre-Deployment or out to a store.
 - **Totals** — live counts by model × role × status (checked-out units excluded).
 - **CSV export** — download the full current state any time.

@@ -11,7 +11,7 @@ beforeEach(async () => {
   await pg.exec(`
     CREATE TABLE machines (
       id serial primary key,
-      serial text not null unique,
+      serial text unique,
       model text not null, role text not null, status text not null,
       notes text, location text not null, slot integer, destination text,
       checked_out_at timestamptz, created_at timestamptz not null default now(),
@@ -40,6 +40,23 @@ describe("repo.checkIn", () => {
     await repo.checkIn(db, checkInArgs);
     await expect(repo.checkIn(db, { ...checkInArgs, serial: "S36250423002" })).rejects.toThrow();
   });
+  it("allows multiple machines with no serial", async () => {
+    await repo.checkIn(db, { ...checkInArgs, serial: null, slot: 1 });
+    const second = await repo.checkIn(db, { ...checkInArgs, serial: null, slot: 2 });
+    expect(second.serial).toBeNull();
+  });
+});
+
+describe("repo.stageInArea", () => {
+  it("moves a machine into an open area and clears slot/checkout", async () => {
+    const m = await repo.checkIn(db, checkInArgs);
+    await repo.checkOutToStore(db, m.id, "Store #9");
+    const staged = await repo.stageInArea(db, m.id, "Outbound");
+    expect(staged.location).toBe("Outbound");
+    expect(staged.slot).toBeNull();
+    expect(staged.destination).toBeNull();
+    expect(staged.checkedOutAt).toBeNull();
+  });
 });
 
 describe("repo.move", () => {
@@ -60,15 +77,6 @@ describe("repo.checkOutToStore", () => {
     expect(out.slot).toBeNull();
     expect(out.destination).toBe("Store #12");
     expect(out.checkedOutAt).not.toBeNull();
-  });
-});
-
-describe("repo.checkOutToPreDeployment", () => {
-  it("stages into Pre-Deployment", async () => {
-    const m = await repo.checkIn(db, checkInArgs);
-    const out = await repo.checkOutToPreDeployment(db, m.id);
-    expect(out.location).toBe("Pre-Deployment");
-    expect(out.slot).toBeNull();
   });
 });
 

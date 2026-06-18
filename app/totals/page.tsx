@@ -25,7 +25,7 @@ export default function TotalsPage() {
   );
 
   return (
-    <AppShell onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
+    <AppShell machines={machines} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
       <div className="grid grid-cols-3 gap-3 mb-4 max-w-md">
         {stat("On hand", onHand.length)}
         {stat("Broken", broken, true)}

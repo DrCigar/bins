@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { machines, MachineRow } from "./schema";
-import { Machine, Model, Role, Status, OUT, PRE_DEPLOYMENT } from "@/lib/domain/types";
+import { Machine, Model, Role, Status, OUT } from "@/lib/domain/types";
 
 // Accepts either the Neon-backed or PGlite-backed Drizzle instance.
 type AnyDb = any;
@@ -13,7 +13,7 @@ const toMachine = (r: MachineRow): Machine => ({
 });
 
 export interface CheckInArgs {
-  serial: string;
+  serial: string | null;
   model: Model;
   role: Role;
   status: Status;
@@ -52,7 +52,7 @@ export const move = (db: AnyDb, id: number, to: { location: string; slot: number
 export const update = (
   db: AnyDb,
   id: number,
-  fields: Partial<Pick<MachineRow, "model" | "role" | "status" | "notes">>,
+  fields: Partial<Pick<MachineRow, "serial" | "model" | "role" | "status" | "notes">>,
 ) => patch(db, id, fields);
 
 export const remove = async (db: AnyDb, id: number): Promise<void> => {
@@ -62,5 +62,6 @@ export const remove = async (db: AnyDb, id: number): Promise<void> => {
 export const checkOutToStore = (db: AnyDb, id: number, destination: string) =>
   patch(db, id, { location: OUT, slot: null, destination, checkedOutAt: new Date() });
 
-export const checkOutToPreDeployment = (db: AnyDb, id: number) =>
-  patch(db, id, { location: PRE_DEPLOYMENT, slot: null });
+// Stage into an open area (Pre-Deployment or Outbound); clears any prior store checkout.
+export const stageInArea = (db: AnyDb, id: number, area: string) =>
+  patch(db, id, { location: area, slot: null, destination: null, checkedOutAt: null });

@@ -1,11 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SerialSearch } from "./SerialSearch";
+import { Machine } from "@/lib/domain/types";
 
 export function AppShell({
-  children, onCheckIn, onCheckOut,
+  children, machines, onCheckIn, onCheckOut,
 }: {
   children: React.ReactNode;
+  machines: Machine[];
   onCheckIn: () => void;
   onCheckOut: () => void;
 }) {
@@ -23,7 +26,7 @@ export function AppShell({
 
   return (
     <div>
-      <header className="flex items-center gap-3 px-4 py-3 bg-black border-l-4 border-pos-vermilion">
+      <header className="flex items-center gap-3 px-4 py-3 bg-black border-l-4 border-pos-vermilion flex-wrap">
         <span className="text-lg font-bold">
           POS<span className="text-pos-vermilion">360</span>
         </span>
@@ -32,6 +35,7 @@ export function AppShell({
           <p className="text-sm font-medium">Register Locator</p>
           <p className="text-[10px] tracking-[0.18em] text-neutral-500">SYSTEMS MADE SIMPLE</p>
         </div>
+        <div className="ml-2"><SerialSearch machines={machines} /></div>
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={onCheckIn}

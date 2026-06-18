@@ -9,7 +9,7 @@ export function SerialSearch({ machines }: { machines: Machine[] }) {
   const router = useRouter();
 
   function go() {
-    const hit = machines.find((m) => m.serial.toLowerCase() === q.trim().toLowerCase());
+    const hit = machines.find((m) => m.serial?.toLowerCase() === q.trim().toLowerCase());
     if (hit && hit.location !== OUT) {
       setMiss(false);
       router.push(`/rack/${encodeURIComponent(hit.location)}?slot=${hit.slot ?? ""}`);

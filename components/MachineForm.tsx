@@ -23,7 +23,7 @@ export function MachineForm({
   return (
     <div className="flex flex-col gap-3">
       <label className="text-xs text-neutral-400">
-        Serial
+        Serial <span className="text-neutral-600">(optional — slot blinks until added)</span>
         <input
           className={field}
           value={value.serial}

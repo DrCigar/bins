@@ -21,7 +21,7 @@ export async function unlockAction(formData: FormData) {
 }
 
 export async function checkInAction(input: {
-  serial: string;
+  serial: string | null;
   model: string;
   role: string;
   status: string;
@@ -30,7 +30,7 @@ export async function checkInAction(input: {
   slot: number | null;
 }) {
   await repo.checkIn(await getReadyDb(), {
-    serial: input.serial.trim(),
+    serial: input.serial?.trim() || null,
     model: assertEnum(MODELS, input.model, "model") as Model,
     role: assertEnum(ROLES, input.role, "role") as Role,
     status: assertEnum(STATUSES, input.status, "status") as Status,
@@ -44,9 +44,10 @@ export async function checkInAction(input: {
 
 export async function updateMachineAction(
   id: number,
-  fields: { model?: string; role?: string; status?: string; notes?: string | null },
+  fields: { serial?: string | null; model?: string; role?: string; status?: string; notes?: string | null },
 ) {
   await repo.update(await getReadyDb(), id, {
+    ...(fields.serial !== undefined ? { serial: fields.serial?.trim() || null } : {}),
     ...(fields.model ? { model: assertEnum(MODELS, fields.model, "model") } : {}),
     ...(fields.role ? { role: assertEnum(ROLES, fields.role, "role") } : {}),
     ...(fields.status ? { status: assertEnum(STATUSES, fields.status, "status") } : {}),
@@ -69,10 +70,11 @@ export async function removeAction(id: number) {
 
 export async function checkOutAction(
   id: number,
-  dest: { kind: "store"; name: string } | { kind: "pre" },
+  dest: { kind: "store"; name: string } | { kind: "area"; area: string },
 ) {
-  if (dest.kind === "store") await repo.checkOutToStore(await getReadyDb(), id, dest.name.trim());
-  else await repo.checkOutToPreDeployment(await getReadyDb(), id);
+  const db = await getReadyDb();
+  if (dest.kind === "store") await repo.checkOutToStore(db, id, dest.name.trim());
+  else await repo.stageInArea(db, id, dest.area);
   revalidatePath("/");
   revalidatePath("/totals");
 }

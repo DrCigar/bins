@@ -33,5 +33,11 @@ export const RACKS: RackConfig[] = [
 ];
 
 export const ZONE_DIVIDER_Y = 259; // dashed line splitting the zones
-export const PRE_DEPLOYMENT_AREA = { label: "Pre-Deployment", x: 505, y: 60, w: 150, h: 300 };
+
+// Right-side open areas. Outbound (unlimited) sits above Pre-Deployment (capped).
+export const OUTBOUND_AREA = { label: "Outbound", x: 505, y: 40, w: 150, h: 130 };
+export const PRE_DEPLOYMENT_AREA = { label: "Pre-Deployment", x: 505, y: 200, w: 150, h: 210 };
+
 export const FLOOR = { w: 680, h: 440 };
+// Display scale — renders the whole floor larger than the design coordinate space.
+export const MAP_SCALE = 1.35;

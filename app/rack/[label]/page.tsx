@@ -11,7 +11,7 @@ import { CheckOutDialog } from "@/components/CheckOutDialog";
 import { fetcher } from "@/lib/fetcher";
 import { updateMachineAction, removeAction, checkInAction, moveAction } from "@/app/actions";
 import { RACKS, RACK_SLOTS } from "@/lib/layout/warehouse";
-import { Machine, PRE_DEPLOYMENT } from "@/lib/domain/types";
+import { Machine, PRE_DEPLOYMENT, OUTBOUND, isOpenArea } from "@/lib/domain/types";
 
 const emptyForm: MachineFormValue = { serial: "", model: "Matsuda", role: "Primary", status: "New", notes: "" };
 const field = "bg-pos-surface2 border border-pos-line rounded-md px-3 py-2 text-sm w-full mt-1 text-white";
@@ -36,14 +36,14 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
     setMoveLoc(""); setMoveSlot("");
     setForm(
       machine
-        ? { serial: machine.serial, model: machine.model, role: machine.role, status: machine.status, notes: machine.notes ?? "" }
+        ? { serial: machine.serial ?? "", model: machine.model, role: machine.role, status: machine.status, notes: machine.notes ?? "" }
         : emptyForm,
     );
   }
 
   const takenAt = (loc: string) => new Set(machines.filter((m) => m.location === loc).map((m) => m.slot));
   const openSlotsAt = (loc: string) =>
-    loc === PRE_DEPLOYMENT ? [] : Array.from({ length: RACK_SLOTS }, (_, i) => i + 1).filter((s) => !takenAt(loc).has(s));
+    isOpenArea(loc) ? [] : Array.from({ length: RACK_SLOTS }, (_, i) => i + 1).filter((s) => !takenAt(loc).has(s));
 
   async function save() {
     if (!edit) return;
@@ -51,10 +51,9 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
     try {
       if (edit.machine) {
         await updateMachineAction(edit.machine.id, {
-          model: form.model, role: form.role, status: form.status, notes: form.notes || null,
+          serial: form.serial || null, model: form.model, role: form.role, status: form.status, notes: form.notes || null,
         });
       } else {
-        if (!form.serial.trim()) { setError("Serial is required"); return; }
         await checkInAction({
           serial: form.serial, model: form.model, role: form.role, status: form.status,
           notes: form.notes || null, location: decoded, slot: edit.slot,
@@ -71,7 +70,7 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
     if (!edit?.machine || !moveLoc) return;
     setError("");
     try {
-      await moveAction(edit.machine.id, moveLoc, moveLoc === PRE_DEPLOYMENT ? null : (moveSlot === "" ? null : Number(moveSlot)));
+      await moveAction(edit.machine.id, moveLoc, isOpenArea(moveLoc) ? null : (moveSlot === "" ? null : Number(moveSlot)));
       setEdit(null);
       mutate();
     } catch (e) {
@@ -91,14 +90,14 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
     : `Add to ${decoded}${edit?.slot ? `-${String(edit.slot).padStart(2, "0")}` : ""}`;
 
   return (
-    <AppShell onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
+    <AppShell machines={machines} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
       <button onClick={() => router.push("/")} className="text-xs text-neutral-400 mb-3 hover:text-white">
         ← Back to map
       </button>
       <RackDetail label={decoded} machines={machines} onSlotClick={openSlot} />
 
       <Dialog open={!!edit} title={title} onClose={() => setEdit(null)}>
-        <MachineForm value={form} onChange={setForm} lockSerial={!!edit?.machine} />
+        <MachineForm value={form} onChange={setForm} lockSerial={!!edit?.machine?.serial} />
 
         {error && <p className="text-status-broken text-xs mt-2">{error}</p>}
 
@@ -125,8 +124,9 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
                 <option value="">Location…</option>
                 {RACKS.map((r) => <option key={r.label} value={r.label}>Rack {r.label}</option>)}
                 <option value={PRE_DEPLOYMENT}>{PRE_DEPLOYMENT}</option>
+                <option value={OUTBOUND}>{OUTBOUND}</option>
               </select>
-              {moveLoc && moveLoc !== PRE_DEPLOYMENT && (
+              {moveLoc && !isOpenArea(moveLoc) && (
                 <select className={field} value={moveSlot} onChange={(e) => setMoveSlot(Number(e.target.value))}>
                   <option value="">Slot…</option>
                   {openSlotsAt(moveLoc).map((s) => <option key={s} value={s}>{s}</option>)}

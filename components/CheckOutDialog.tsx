@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import { Dialog } from "./Dialog";
 import { rankOldestFirst } from "@/lib/domain/ranking";
-import { MODELS, Model, Machine, roleTag } from "@/lib/domain/types";
+import { MODELS, Model, Machine, roleTag, PRE_DEPLOYMENT, OUTBOUND } from "@/lib/domain/types";
 import { parseSerialDate } from "@/lib/domain/serial";
 import { checkOutAction } from "@/app/actions";
 
@@ -17,7 +17,7 @@ export function CheckOutDialog({
 }) {
   const [model, setModel] = useState<Model>("Matsuda");
   const [chosenId, setChosenId] = useState<number | null>(null);
-  const [destKind, setDestKind] = useState<"pre" | "store">("pre");
+  const [destKind, setDestKind] = useState<"pre" | "outbound" | "store">("pre");
   const [store, setStore] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -30,10 +30,11 @@ export function CheckOutDialog({
     if (destKind === "store" && !store.trim()) { setError("Enter a store name"); return; }
     setBusy(true);
     try {
-      await checkOutAction(
-        chosenId,
-        destKind === "store" ? { kind: "store", name: store } : { kind: "pre" },
-      );
+      const dest =
+        destKind === "store"
+          ? ({ kind: "store", name: store } as const)
+          : ({ kind: "area", area: destKind === "outbound" ? OUTBOUND : PRE_DEPLOYMENT } as const);
+      await checkOutAction(chosenId, dest);
       setChosenId(null); setStore(""); onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Check out failed");
@@ -80,16 +81,22 @@ export function CheckOutDialog({
         })}
       </div>
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 grid grid-cols-3 gap-2">
         <button
           onClick={() => setDestKind("pre")}
-          className={`flex-1 rounded-md py-2 text-sm border ${destKind === "pre" ? "border-pos-vermilion" : "border-pos-line"}`}
+          className={`rounded-md py-2 text-sm border ${destKind === "pre" ? "border-pos-vermilion" : "border-pos-line"}`}
         >
-          Pre-Deployment
+          Pre-Deploy
+        </button>
+        <button
+          onClick={() => setDestKind("outbound")}
+          className={`rounded-md py-2 text-sm border ${destKind === "outbound" ? "border-pos-vermilion" : "border-pos-line"}`}
+        >
+          Outbound
         </button>
         <button
           onClick={() => setDestKind("store")}
-          className={`flex-1 rounded-md py-2 text-sm border ${destKind === "store" ? "border-pos-vermilion" : "border-pos-line"}`}
+          className={`rounded-md py-2 text-sm border ${destKind === "store" ? "border-pos-vermilion" : "border-pos-line"}`}
         >
           To a store
         </button>

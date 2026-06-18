@@ -1,6 +1,6 @@
 CREATE TABLE "machines" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"serial" text NOT NULL,
+	"serial" text,
 	"model" text NOT NULL,
 	"role" text NOT NULL,
 	"status" text NOT NULL,

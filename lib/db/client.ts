@@ -20,7 +20,7 @@ export function getDb(): DrizzleDb {
 // Idempotent schema creation — runs once per process so deploys need no migration step.
 const DDL = sql`CREATE TABLE IF NOT EXISTS machines (
   id serial PRIMARY KEY,
-  serial text NOT NULL UNIQUE,
+  serial text UNIQUE,
   model text NOT NULL,
   role text NOT NULL,
   status text NOT NULL,

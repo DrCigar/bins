@@ -10,6 +10,12 @@
   --color-status-new: #3ccb7f;
   --color-status-used: #e6a531;
   --color-status-broken: #ef4023;
+  --animate-blink: blink 1.1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
 }
 
 @theme inline {

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Dialog } from "./Dialog";
 import { MachineForm, MachineFormValue } from "./MachineForm";
 import { RACKS, RACK_SLOTS } from "@/lib/layout/warehouse";
-import { PRE_DEPLOYMENT, Machine } from "@/lib/domain/types";
+import { PRE_DEPLOYMENT, OUTBOUND, Machine, isOpenArea } from "@/lib/domain/types";
 import { checkInAction } from "@/app/actions";
 
 const emptyForm: MachineFormValue = {
@@ -27,21 +27,19 @@ export function CheckInDialog({
   const [busy, setBusy] = useState(false);
 
   const takenSlots = new Set(machines.filter((m) => m.location === location).map((m) => m.slot));
-  const openSlots =
-    location === PRE_DEPLOYMENT
-      ? []
-      : Array.from({ length: RACK_SLOTS }, (_, i) => i + 1).filter((s) => !takenSlots.has(s));
+  const openSlots = isOpenArea(location)
+    ? []
+    : Array.from({ length: RACK_SLOTS }, (_, i) => i + 1).filter((s) => !takenSlots.has(s));
 
   async function submit() {
     setError("");
-    if (!v.serial.trim()) { setError("Serial is required"); return; }
-    if (location !== PRE_DEPLOYMENT && slot === "") { setError("Pick a slot"); return; }
+    if (!isOpenArea(location) && slot === "") { setError("Pick a slot"); return; }
     setBusy(true);
     try {
       await checkInAction({
-        serial: v.serial, model: v.model, role: v.role, status: v.status,
+        serial: v.serial || null, model: v.model, role: v.role, status: v.status,
         notes: v.notes || null, location,
-        slot: location === PRE_DEPLOYMENT ? null : Number(slot),
+        slot: isOpenArea(location) ? null : Number(slot),
       });
       setV(emptyForm); setSlot(""); onClose();
     } catch (e) {
@@ -64,9 +62,10 @@ export function CheckInDialog({
           >
             {RACKS.map((r) => <option key={r.label} value={r.label}>Rack {r.label}</option>)}
             <option value={PRE_DEPLOYMENT}>{PRE_DEPLOYMENT}</option>
+            <option value={OUTBOUND}>{OUTBOUND}</option>
           </select>
         </label>
-        {location !== PRE_DEPLOYMENT && (
+        {!isOpenArea(location) && (
           <label className="text-xs text-neutral-400">
             Slot
             <select className={field} value={slot} onChange={(e) => setSlot(Number(e.target.value))}>
