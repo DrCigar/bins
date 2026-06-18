@@ -1,11 +1,11 @@
-import { getDb } from "@/lib/db/client";
+import { getReadyDb } from "@/lib/db/client";
 import { list } from "@/lib/db/repo";
 import { toCsv } from "@/lib/domain/csv";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const machines = await list(getDb());
+  const machines = await list(await getReadyDb());
   const csv = toCsv(machines);
   return new Response(csv, {
     headers: {

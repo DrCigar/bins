@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import { getDb } from "@/lib/db/client";
+import { getReadyDb } from "@/lib/db/client";
 import * as repo from "@/lib/db/repo";
 import { MODELS, ROLES, STATUSES, Model, Role, Status } from "@/lib/domain/types";
 import { isValidPasscode, COOKIE_NAME } from "@/lib/auth";
@@ -29,7 +29,7 @@ export async function checkInAction(input: {
   location: string;
   slot: number | null;
 }) {
-  await repo.checkIn(getDb(), {
+  await repo.checkIn(await getReadyDb(), {
     serial: input.serial.trim(),
     model: assertEnum(MODELS, input.model, "model") as Model,
     role: assertEnum(ROLES, input.role, "role") as Role,
@@ -46,7 +46,7 @@ export async function updateMachineAction(
   id: number,
   fields: { model?: string; role?: string; status?: string; notes?: string | null },
 ) {
-  await repo.update(getDb(), id, {
+  await repo.update(await getReadyDb(), id, {
     ...(fields.model ? { model: assertEnum(MODELS, fields.model, "model") } : {}),
     ...(fields.role ? { role: assertEnum(ROLES, fields.role, "role") } : {}),
     ...(fields.status ? { status: assertEnum(STATUSES, fields.status, "status") } : {}),
@@ -57,12 +57,12 @@ export async function updateMachineAction(
 }
 
 export async function moveAction(id: number, location: string, slot: number | null) {
-  await repo.move(getDb(), id, { location, slot });
+  await repo.move(await getReadyDb(), id, { location, slot });
   revalidatePath("/");
 }
 
 export async function removeAction(id: number) {
-  await repo.remove(getDb(), id);
+  await repo.remove(await getReadyDb(), id);
   revalidatePath("/");
   revalidatePath("/totals");
 }
@@ -71,8 +71,8 @@ export async function checkOutAction(
   id: number,
   dest: { kind: "store"; name: string } | { kind: "pre" },
 ) {
-  if (dest.kind === "store") await repo.checkOutToStore(getDb(), id, dest.name.trim());
-  else await repo.checkOutToPreDeployment(getDb(), id);
+  if (dest.kind === "store") await repo.checkOutToStore(await getReadyDb(), id, dest.name.trim());
+  else await repo.checkOutToPreDeployment(await getReadyDb(), id);
   revalidatePath("/");
   revalidatePath("/totals");
 }

@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Register Locator
 
-## Getting Started
+A POS360-branded web app for warehouse associates to locate, check in/out, move, and tag
+cash registers across a true-to-life floor map. Built with Next.js 16, Tailwind v4,
+Drizzle ORM, and Neon Postgres.
 
-First, run the development server:
+## What it does
+
+- **Floor map** — 16 racks in their real positions, colored by how full they are. Tap a rack to open it.
+- **Rack detail** — 25 slots per rack (one register each); a separate Pre-Deployment area (up to 30).
+- **Check In** — add a register: serial, model (Matsuda / Hanasis / Yunos), role (Primary/Secondary), status (New/Used/Broken), notes, and where to place it.
+- **Check Out** — pick a model; the app suggests the **oldest** units first (by the date encoded in the serial) and you send one to Pre-Deployment or out to a store.
+- **Totals** — live counts by model × role × status (checked-out units excluded).
+- **CSV export** — download the full current state any time.
+- **Passcode gate** — one shared team passcode unlocks the app.
+
+---
+
+## Deploy to Vercel + Neon (free, ~5 minutes)
+
+The database schema creates itself automatically on first run — there is **no migration step to run**.
+
+1. **Import the repo into Vercel**
+   - Go to https://vercel.com/new and import `DrCigar/bins`.
+   - Framework preset: **Next.js** (auto-detected). Click **Deploy** (the first build will succeed even before the database is connected).
+
+2. **Add a free Neon database**
+   - In the Vercel project → **Storage** tab → **Create Database** → **Neon** (Postgres) → choose the free plan.
+   - Connecting it automatically adds a `DATABASE_URL` environment variable to the project.
+
+3. **Set the team passcode**
+   - Vercel project → **Settings → Environment Variables** → add:
+     - `APP_PASSCODE` = *(whatever passcode you want the team to type)*
+   - Apply it to **Production** (and Preview if you want).
+
+4. **Redeploy**
+   - Vercel project → **Deployments** → redeploy the latest, so it picks up `DATABASE_URL` and `APP_PASSCODE`.
+
+5. **Open the app**
+   - Visit the deployment URL, enter the passcode, and you're in. The `machines` table is created on the first request.
+
+That's it — no commands to run. Add registers with **Check In**.
+
+---
+
+## Local development (optional)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.local.example .env.local   # then edit values
+#   DATABASE_URL  -> a Neon (or any Postgres) connection string
+#   APP_PASSCODE  -> any passcode for local use
+npm run dev                         # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Other scripts:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm test            # run the unit tests (domain logic + repository)
+npm run build       # production build
+npm run db:generate # regenerate migration SQL after schema changes
+npm run db:migrate  # apply migrations explicitly (optional; app self-creates the table)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Customizing the warehouse layout
 
-## Learn More
+Rack letters, positions, orientation, and zones live in
+[`lib/layout/warehouse.ts`](lib/layout/warehouse.ts) — edit that file to rename racks
+(currently placeholders `A`–`P`) or nudge their positions. No database changes needed.
 
-To learn more about Next.js, take a look at the following resources:
+## Serial number format
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Check Out's "oldest first" suggestion reads the date encoded in the serial:
+`S36` + `YYMMDD` + sequence (e.g. `S36250423001` → 2025-04-23). The parser lives in
+[`lib/domain/serial.ts`](lib/domain/serial.ts); adjust it if the prefix or format differs.
