@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pos-black: #000000;
+  --color-pos-surface: #0f0f0f;
+  --color-pos-surface2: #161616;
+  --color-pos-vermilion: #ef4023;
+  --color-pos-gray: #ebebeb;
+  --color-pos-line: #262626;
+  --color-status-new: #3ccb7f;
+  --color-status-used: #e6a531;
+  --color-status-broken: #ef4023;
+}
+
+@theme inline {
+  --font-sans: var(--font-figtree);
+  --font-serif: var(--font-dm-serif);
+}
+
+html, body {
+  background: var(--color-pos-black);
+  color: #ffffff;
+  font-family: var(--font-sans);
+}
