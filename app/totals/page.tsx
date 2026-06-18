@@ -1,34 +1,37 @@
 "use client";
 import useSWR from "swr";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
-import { FloorMap } from "@/components/FloorMap";
+import { TotalsTable } from "@/components/TotalsTable";
 import { CheckInDialog } from "@/components/CheckInDialog";
 import { CheckOutDialog } from "@/components/CheckOutDialog";
-import { SerialSearch } from "@/components/SerialSearch";
 import { fetcher } from "@/lib/fetcher";
-import { Machine, OUT } from "@/lib/domain/types";
+import { Machine, OUT, PRE_DEPLOYMENT } from "@/lib/domain/types";
 
-export default function Home() {
+export default function TotalsPage() {
   const { data: machines = [] } = useSWR<Machine[]>("/api/machines", fetcher, { refreshInterval: 4000 });
   const [checkIn, setCheckIn] = useState(false);
   const [checkOut, setCheckOut] = useState(false);
-  const router = useRouter();
 
   const onHand = machines.filter((m) => m.location !== OUT);
   const broken = onHand.filter((m) => m.status === "Broken").length;
+  const pre = machines.filter((m) => m.location === PRE_DEPLOYMENT).length;
+
+  const stat = (label: string, value: number, accent = false) => (
+    <div className="bg-pos-surface2 rounded-md px-4 py-3">
+      <p className="text-[13px] text-neutral-400">{label}</p>
+      <p className={`text-2xl font-medium ${accent ? "text-pos-vermilion" : ""}`}>{value}</p>
+    </div>
+  );
 
   return (
     <AppShell onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
-      <div className="mb-3 flex items-center gap-4">
-        <SerialSearch machines={machines} />
-        <div className="text-xs text-neutral-400 flex gap-4 ml-auto">
-          <span><b className="text-white">{onHand.length}</b> on hand</span>
-          <span><b className="text-pos-vermilion">{broken}</b> broken</span>
-        </div>
+      <div className="grid grid-cols-3 gap-3 mb-4 max-w-md">
+        {stat("On hand", onHand.length)}
+        {stat("Broken", broken, true)}
+        {stat("Pre-Deployment", pre)}
       </div>
-      <FloorMap machines={machines} onSelect={(label) => router.push(`/rack/${encodeURIComponent(label)}`)} />
+      <TotalsTable machines={machines} />
       <CheckInDialog open={checkIn} onClose={() => setCheckIn(false)} machines={machines} />
       <CheckOutDialog open={checkOut} onClose={() => setCheckOut(false)} machines={machines} />
     </AppShell>

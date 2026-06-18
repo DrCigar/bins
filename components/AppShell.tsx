@@ -1,0 +1,63 @@
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+export function AppShell({
+  children, onCheckIn, onCheckOut,
+}: {
+  children: React.ReactNode;
+  onCheckIn: () => void;
+  onCheckOut: () => void;
+}) {
+  const path = usePathname();
+  const tab = (href: string, label: string) => (
+    <Link
+      href={href}
+      className={`text-sm pb-1.5 border-b-2 ${
+        path === href ? "text-white border-pos-vermilion" : "text-neutral-400 border-transparent"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+
+  return (
+    <div>
+      <header className="flex items-center gap-3 px-4 py-3 bg-black border-l-4 border-pos-vermilion">
+        <span className="text-lg font-bold">
+          POS<span className="text-pos-vermilion">360</span>
+        </span>
+        <span className="w-px h-4 bg-neutral-700" />
+        <div className="leading-tight">
+          <p className="text-sm font-medium">Register Locator</p>
+          <p className="text-[10px] tracking-[0.18em] text-neutral-500">SYSTEMS MADE SIMPLE</p>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={onCheckIn}
+            className="text-sm font-medium px-3 py-1.5 rounded-md border border-pos-line hover:bg-neutral-900"
+          >
+            Check In
+          </button>
+          <button
+            onClick={onCheckOut}
+            className="text-sm font-medium px-3 py-1.5 rounded-md bg-pos-vermilion text-white"
+          >
+            Check Out
+          </button>
+          <a
+            href="/api/export"
+            className="text-sm px-3 py-1.5 rounded-md border border-pos-line hover:bg-neutral-900"
+          >
+            Export CSV
+          </a>
+        </div>
+      </header>
+      <nav className="flex gap-5 px-4 bg-black border-b border-pos-line pt-1">
+        {tab("/", "Floor map")}
+        {tab("/totals", "Totals")}
+      </nav>
+      <main className="p-4">{children}</main>
+    </div>
+  );
+}
