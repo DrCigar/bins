@@ -1,8 +1,8 @@
 import { Machine } from "./types";
 
 const HEADER = [
-  "serial", "model", "role", "status", "notes", "location", "slot",
-  "destination", "checked_out_at", "created_at", "updated_at",
+  "serial", "product_line", "role", "model", "status", "assembled_by", "notes",
+  "location", "slot", "destination", "checked_out_at", "created_at", "updated_at",
 ] as const;
 
 const esc = (v: unknown): string => {
@@ -13,7 +13,7 @@ const esc = (v: unknown): string => {
 
 export function toCsv(machines: Machine[]): string {
   const rows = machines.map((m) =>
-    [m.serial, m.model, m.role, m.status, m.notes, m.location, m.slot,
+    [m.serial, m.productLine, m.role, m.model, m.status, m.assembledBy, m.notes, m.location, m.slot,
      m.destination, m.checkedOutAt, m.createdAt, m.updatedAt].map(esc).join(","),
   );
   return [HEADER.join(","), ...rows].join("\n") + "\n";

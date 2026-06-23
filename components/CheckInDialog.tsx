@@ -1,14 +1,12 @@
 "use client";
 import { useState } from "react";
 import { Dialog } from "./Dialog";
-import { MachineForm, MachineFormValue } from "./MachineForm";
+import { MachineForm, MachineFormValue, emptyMachineForm } from "./MachineForm";
 import { RACKS, RACK_SLOTS } from "@/lib/layout/warehouse";
-import { PRE_DEPLOYMENT, OUTBOUND, Machine, isOpenArea } from "@/lib/domain/types";
+import { PRE_DEPLOYMENT, OUTBOUND, INBOUND, Machine, isOpenArea } from "@/lib/domain/types";
 import { checkInAction } from "@/app/actions";
 
-const emptyForm: MachineFormValue = {
-  serial: "", model: "Matsuda", role: "Primary", status: "New", notes: "",
-};
+const emptyForm = emptyMachineForm;
 const field = "bg-pos-surface2 border border-pos-line rounded-md px-3 py-2 text-sm w-full mt-1 text-white";
 
 export function CheckInDialog({
@@ -38,6 +36,7 @@ export function CheckInDialog({
     try {
       await checkInAction({
         serial: v.serial || null, model: v.model, role: v.role, status: v.status,
+        productLine: v.productLine, assembledBy: v.assembledBy || null,
         notes: v.notes || null, location,
         slot: isOpenArea(location) ? null : Number(slot),
       });
@@ -61,6 +60,7 @@ export function CheckInDialog({
             onChange={(e) => { setLocation(e.target.value); setSlot(""); }}
           >
             {RACKS.map((r) => <option key={r.label} value={r.label}>Rack {r.label}</option>)}
+            <option value={INBOUND}>{INBOUND}</option>
             <option value={PRE_DEPLOYMENT}>{PRE_DEPLOYMENT}</option>
             <option value={OUTBOUND}>{OUTBOUND}</option>
           </select>

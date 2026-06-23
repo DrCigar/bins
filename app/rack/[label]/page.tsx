@@ -5,15 +5,16 @@ import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { RackDetail } from "@/components/RackDetail";
 import { Dialog } from "@/components/Dialog";
-import { MachineForm, MachineFormValue } from "@/components/MachineForm";
+import { MachineForm, MachineFormValue, emptyMachineForm } from "@/components/MachineForm";
 import { CheckInDialog } from "@/components/CheckInDialog";
 import { CheckOutDialog } from "@/components/CheckOutDialog";
+import { SerializeDialog } from "@/components/SerializeDialog";
 import { fetcher } from "@/lib/fetcher";
 import { updateMachineAction, removeAction, checkInAction, moveAction } from "@/app/actions";
 import { RACKS, RACK_SLOTS } from "@/lib/layout/warehouse";
-import { Machine, PRE_DEPLOYMENT, OUTBOUND, isOpenArea } from "@/lib/domain/types";
+import { Machine, PRE_DEPLOYMENT, OUTBOUND, INBOUND, isOpenArea } from "@/lib/domain/types";
 
-const emptyForm: MachineFormValue = { serial: "", model: "Matsuda", role: "Primary", status: "New", notes: "" };
+const emptyForm = emptyMachineForm;
 const field = "bg-pos-surface2 border border-pos-line rounded-md px-3 py-2 text-sm w-full mt-1 text-white";
 
 export default function RackPage({ params }: { params: Promise<{ label: string }> }) {
@@ -26,6 +27,7 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
   const [moveLoc, setMoveLoc] = useState("");
   const [moveSlot, setMoveSlot] = useState<number | "">("");
   const [error, setError] = useState("");
+  const [serialize, setSerialize] = useState(false);
   const [checkIn, setCheckIn] = useState(false);
   const [checkOut, setCheckOut] = useState(false);
   const router = useRouter();
@@ -36,7 +38,11 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
     setMoveLoc(""); setMoveSlot("");
     setForm(
       machine
-        ? { serial: machine.serial ?? "", model: machine.model, role: machine.role, status: machine.status, notes: machine.notes ?? "" }
+        ? {
+            serial: machine.serial ?? "", productLine: machine.productLine ?? "360 Pro",
+            role: machine.role, model: machine.model, status: machine.status,
+            assembledBy: machine.assembledBy ?? "", notes: machine.notes ?? "",
+          }
         : emptyForm,
     );
   }
@@ -51,11 +57,13 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
     try {
       if (edit.machine) {
         await updateMachineAction(edit.machine.id, {
-          serial: form.serial || null, model: form.model, role: form.role, status: form.status, notes: form.notes || null,
+          serial: form.serial || null, model: form.model, role: form.role, status: form.status,
+          productLine: form.productLine, assembledBy: form.assembledBy || null, notes: form.notes || null,
         });
       } else {
         await checkInAction({
           serial: form.serial, model: form.model, role: form.role, status: form.status,
+          productLine: form.productLine, assembledBy: form.assembledBy || null,
           notes: form.notes || null, location: decoded, slot: edit.slot,
         });
       }
@@ -90,7 +98,7 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
     : `Add to ${decoded}${edit?.slot ? `-${String(edit.slot).padStart(2, "0")}` : ""}`;
 
   return (
-    <AppShell machines={machines} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
+    <AppShell machines={machines} onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
       <button onClick={() => router.push("/")} className="text-xs text-neutral-400 mb-3 hover:text-white">
         ← Back to map
       </button>
@@ -123,6 +131,7 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
               >
                 <option value="">Location…</option>
                 {RACKS.map((r) => <option key={r.label} value={r.label}>Rack {r.label}</option>)}
+                <option value={INBOUND}>{INBOUND}</option>
                 <option value={PRE_DEPLOYMENT}>{PRE_DEPLOYMENT}</option>
                 <option value={OUTBOUND}>{OUTBOUND}</option>
               </select>
@@ -144,6 +153,7 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
         )}
       </Dialog>
 
+      <SerializeDialog open={serialize} onClose={() => setSerialize(false)} onDone={() => mutate()} />
       <CheckInDialog open={checkIn} onClose={() => { setCheckIn(false); mutate(); }} machines={machines} />
       <CheckOutDialog open={checkOut} onClose={() => { setCheckOut(false); mutate(); }} machines={machines} />
     </AppShell>

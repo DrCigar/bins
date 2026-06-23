@@ -4,12 +4,21 @@ import { cookies } from "next/headers";
 import { getReadyDb } from "@/lib/db/client";
 import * as repo from "@/lib/db/repo";
 import { MODELS, ROLES, STATUSES, PRODUCT_LINES, Model, Role, Status, ProductLine } from "@/lib/domain/types";
+import { areaCapacity } from "@/lib/layout/warehouse";
 import { isValidPasscode, COOKIE_NAME } from "@/lib/auth";
 
 const assertEnum = <T extends readonly string[]>(set: T, v: string, name: string): T[number] => {
   if (!set.includes(v as T[number])) throw new Error(`Invalid ${name}: ${v}`);
   return v as T[number];
 };
+
+// Throws if `location` is a capped open area that is already full.
+async function assertAreaHasRoom(db: Awaited<ReturnType<typeof getReadyDb>>, location: string): Promise<void> {
+  const cap = areaCapacity(location);
+  if (cap === null) return; // racks (slot-unique) and unlimited areas
+  const here = (await repo.list(db)).filter((m) => m.location === location).length;
+  if (here >= cap) throw new Error(`${location} is full (max ${cap}).`);
+}
 
 export async function unlockAction(formData: FormData) {
   const code = String(formData.get("passcode") ?? "");
@@ -31,7 +40,9 @@ export async function checkInAction(input: {
   location: string;
   slot: number | null;
 }) {
-  await repo.checkIn(await getReadyDb(), {
+  const db = await getReadyDb();
+  await assertAreaHasRoom(db, input.location);
+  await repo.checkIn(db, {
     serial: input.serial?.trim() || null,
     model: assertEnum(MODELS, input.model, "model") as Model,
     role: assertEnum(ROLES, input.role, "role") as Role,
@@ -88,7 +99,9 @@ export async function updateMachineAction(
 }
 
 export async function moveAction(id: number, location: string, slot: number | null) {
-  await repo.move(await getReadyDb(), id, { location, slot });
+  const db = await getReadyDb();
+  await assertAreaHasRoom(db, location);
+  await repo.move(db, id, { location, slot });
   revalidatePath("/");
 }
 
@@ -103,8 +116,12 @@ export async function checkOutAction(
   dest: { kind: "store"; name: string } | { kind: "area"; area: string },
 ) {
   const db = await getReadyDb();
-  if (dest.kind === "store") await repo.checkOutToStore(db, id, dest.name.trim());
-  else await repo.stageInArea(db, id, dest.area);
+  if (dest.kind === "store") {
+    await repo.checkOutToStore(db, id, dest.name.trim());
+  } else {
+    await assertAreaHasRoom(db, dest.area);
+    await repo.stageInArea(db, id, dest.area);
+  }
   revalidatePath("/");
   revalidatePath("/totals");
 }

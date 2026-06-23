@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeTotals } from "@/lib/domain/totals";
+import { computeTotals, computeLineTotals } from "@/lib/domain/totals";
 import type { Machine } from "@/lib/domain/types";
 
 const m = (over: Partial<Machine>): Machine => ({
@@ -29,5 +29,21 @@ describe("computeTotals", () => {
     const t = computeTotals([]);
     expect(t.rows).toHaveLength(6);
     expect(t.grand.total).toBe(0);
+  });
+});
+
+describe("computeLineTotals", () => {
+  it("breaks down by product line x role x status, excluding Out, plus by-model", () => {
+    const list = [
+      m({ productLine: "360 Pro", role: "Primary", status: "New", model: "Matsuda" }),
+      m({ productLine: "360 Smoke", role: "Secondary", status: "Broken", model: "Yunos" }),
+      m({ productLine: "360 Pro", role: "Primary", status: "New", model: "Matsuda", location: "Out" }),
+    ];
+    const t = computeLineTotals(list);
+    expect(t.rows.find((r) => r.line === "360 Pro" && r.role === "Primary")).toMatchObject({ New: 1, total: 1 });
+    expect(t.rows.find((r) => r.line === "360 Smoke" && r.role === "Secondary")).toMatchObject({ Broken: 1, total: 1 });
+    expect(t.byModel.Matsuda).toBe(1); // Out excluded
+    expect(t.byModel.Yunos).toBe(1);
+    expect(t.rows).toHaveLength(4);
   });
 });

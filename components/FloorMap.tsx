@@ -1,8 +1,8 @@
 "use client";
-import { Machine, PRE_DEPLOYMENT, OUTBOUND } from "@/lib/domain/types";
+import { Machine, PRE_DEPLOYMENT, OUTBOUND, INBOUND } from "@/lib/domain/types";
 import {
   RACKS, RACK_SLOTS, FLOOR, MAP_SCALE, ZONE_DIVIDER_Y,
-  PRE_DEPLOYMENT_AREA, PRE_DEPLOYMENT_CAPACITY, OUTBOUND_AREA,
+  PRE_DEPLOYMENT_AREA, PRE_DEPLOYMENT_CAPACITY, OUTBOUND_AREA, INBOUND_AREA,
 } from "@/lib/layout/warehouse";
 
 const s = (n: number) => n * MAP_SCALE;
@@ -30,6 +30,19 @@ export function FloorMap({
       <span className="absolute text-[11px] tracking-wider text-neutral-500" style={{ left: s(12), top: s(268) }}>
         OFFICE / DEN
       </span>
+
+      <button
+        onClick={() => onSelect(INBOUND)}
+        className="absolute rounded-lg border border-dashed border-pos-vermilion flex flex-col items-center justify-center gap-1 hover:bg-pos-vermilion/10"
+        style={{
+          left: s(INBOUND_AREA.x), top: s(INBOUND_AREA.y),
+          width: s(INBOUND_AREA.w), height: s(INBOUND_AREA.h),
+          background: "rgba(239,64,35,0.08)",
+        }}
+      >
+        <span className="text-xs font-medium tracking-wide">INBOUND</span>
+        <span className="text-xl font-bold">{countAt(INBOUND)}<span className="text-xs text-neutral-500 font-normal"> / 10</span></span>
+      </button>
 
       <button
         onClick={() => onSelect(OUTBOUND)}
@@ -61,6 +74,12 @@ export function FloorMap({
         </span>
       </button>
 
+      {RACKS.some((r) => r.isStaging) && (
+        <span className="absolute text-[9px] font-medium tracking-wider" style={{ left: s(357), top: s(120), color: "#EF9F27" }}>
+          STAGING
+        </span>
+      )}
+
       {RACKS.map((r) => {
         const fill = countAt(r.label) / RACK_SLOTS;
         const vertical = r.orientation === "vertical";
@@ -68,13 +87,17 @@ export function FloorMap({
           <button
             key={r.label}
             onClick={() => onSelect(r.label)}
-            title={`Rack ${r.label} — ${countAt(r.label)}/${RACK_SLOTS}`}
-            className="absolute rounded-[5px] border border-white/20 flex items-center justify-center text-[11px] font-medium text-white hover:border-white/60"
+            title={`Rack ${r.label} — ${countAt(r.label)}/${RACK_SLOTS}${r.isStaging ? " (staging)" : ""}`}
+            className={`absolute rounded-[5px] border flex items-center justify-center text-[11px] font-medium text-white ${
+              r.isStaging ? "border-[#EF9F27] hover:border-[#FAC775]" : "border-white/20 hover:border-white/60"
+            }`}
             style={{
               left: s(r.x), top: s(r.y),
               width: vertical ? s(16) : s(50),
               height: vertical ? s(50) : s(16),
-              background: `rgba(239,64,35,${0.1 + fill * 0.9})`,
+              background: r.isStaging
+                ? `rgba(239,159,39,${0.18 + fill * 0.8})`
+                : `rgba(239,64,35,${0.1 + fill * 0.9})`,
             }}
           >
             {r.label}

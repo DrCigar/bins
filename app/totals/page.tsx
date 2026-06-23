@@ -5,11 +5,13 @@ import { AppShell } from "@/components/AppShell";
 import { TotalsTable } from "@/components/TotalsTable";
 import { CheckInDialog } from "@/components/CheckInDialog";
 import { CheckOutDialog } from "@/components/CheckOutDialog";
+import { SerializeDialog } from "@/components/SerializeDialog";
 import { fetcher } from "@/lib/fetcher";
 import { Machine, OUT, PRE_DEPLOYMENT } from "@/lib/domain/types";
 
 export default function TotalsPage() {
-  const { data: machines = [] } = useSWR<Machine[]>("/api/machines", fetcher, { refreshInterval: 4000 });
+  const { data: machines = [], mutate } = useSWR<Machine[]>("/api/machines", fetcher, { refreshInterval: 4000 });
+  const [serialize, setSerialize] = useState(false);
   const [checkIn, setCheckIn] = useState(false);
   const [checkOut, setCheckOut] = useState(false);
 
@@ -25,15 +27,16 @@ export default function TotalsPage() {
   );
 
   return (
-    <AppShell machines={machines} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
+    <AppShell machines={machines} onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
       <div className="grid grid-cols-3 gap-3 mb-4 max-w-md">
         {stat("On hand", onHand.length)}
         {stat("Broken", broken, true)}
         {stat("Pre-Deployment", pre)}
       </div>
       <TotalsTable machines={machines} />
-      <CheckInDialog open={checkIn} onClose={() => setCheckIn(false)} machines={machines} />
-      <CheckOutDialog open={checkOut} onClose={() => setCheckOut(false)} machines={machines} />
+      <SerializeDialog open={serialize} onClose={() => setSerialize(false)} onDone={() => mutate()} />
+      <CheckInDialog open={checkIn} onClose={() => { setCheckIn(false); mutate(); }} machines={machines} />
+      <CheckOutDialog open={checkOut} onClose={() => { setCheckOut(false); mutate(); }} machines={machines} />
     </AppShell>
   );
 }

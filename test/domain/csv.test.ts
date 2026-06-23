@@ -13,8 +13,8 @@ describe("toCsv", () => {
   it("writes a header and one row per machine", () => {
     const csv = toCsv([base]);
     const lines = csv.trim().split("\n");
-    expect(lines[0]).toBe("serial,model,role,status,notes,location,slot,destination,checked_out_at,created_at,updated_at");
-    expect(lines[1]).toContain("S36250423001,Matsuda,Primary,New,,A,3,,");
+    expect(lines[0]).toBe("serial,product_line,role,model,status,assembled_by,notes,location,slot,destination,checked_out_at,created_at,updated_at");
+    expect(lines[1]).toContain("S36250423001,360 Pro,Primary,Matsuda,New,,,A,3,,");
   });
 
   it("escapes commas and quotes in notes", () => {

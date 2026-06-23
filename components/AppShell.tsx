@@ -5,10 +5,11 @@ import { SerialSearch } from "./SerialSearch";
 import { Machine } from "@/lib/domain/types";
 
 export function AppShell({
-  children, machines, onCheckIn, onCheckOut,
+  children, machines, onSerialize, onCheckIn, onCheckOut,
 }: {
   children: React.ReactNode;
   machines: Machine[];
+  onSerialize: () => void;
   onCheckIn: () => void;
   onCheckOut: () => void;
 }) {
@@ -37,6 +38,12 @@ export function AppShell({
         </div>
         <div className="ml-2"><SerialSearch machines={machines} /></div>
         <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={onSerialize}
+            className="text-sm font-medium px-3 py-1.5 rounded-md border border-pos-line hover:bg-neutral-900"
+          >
+            Serialize
+          </button>
           <button
             onClick={onCheckIn}
             className="text-sm font-medium px-3 py-1.5 rounded-md border border-pos-line hover:bg-neutral-900"
