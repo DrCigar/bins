@@ -68,6 +68,7 @@ export function AppShell({
       <nav className="flex gap-5 px-4 bg-black border-b border-pos-line pt-1">
         {tab("/", "Floor map")}
         {tab("/totals", "Totals")}
+        {tab("/activity", "Activity")}
       </nav>
       <main className="p-4">{children}</main>
     </div>

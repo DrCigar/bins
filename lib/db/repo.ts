@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
-import { machines, MachineRow } from "./schema";
-import { Machine, Model, Role, Status, ProductLine, OUT, isOpenArea } from "@/lib/domain/types";
+import { machines, serializationEvents, MachineRow, SerializationEventRow } from "./schema";
+import { Machine, Model, Role, Status, ProductLine, SerializationEvent, OUT, isOpenArea } from "@/lib/domain/types";
 import { prefixFor, buildSerial } from "@/lib/domain/serial";
 import { STAGING_RACKS, RACK_SLOTS } from "@/lib/layout/warehouse";
 
@@ -147,5 +147,29 @@ export async function serializeBatch(db: AnyDb, args: SerializeArgs, quantity: n
     slot: open[i].slot,
   }));
   const inserted = await db.insert(machines).values(values).returning();
+
+  // Append-only build-activity log (one event per serialized unit).
+  await db.insert(serializationEvents).values(
+    inserted.map((r: MachineRow) => ({
+      serial: r.serial as string,
+      productLine: args.productLine,
+      role: args.role,
+      model: args.model,
+      assembledBy: args.assembledBy,
+    })),
+  );
+
   return inserted.map(toMachine);
+}
+
+const toEvent = (r: SerializationEventRow): SerializationEvent => ({
+  ...r,
+  productLine: (r.productLine as ProductLine) ?? null,
+  role: r.role as Role,
+  model: r.model as Model,
+});
+
+export async function listSerializationEvents(db: AnyDb): Promise<SerializationEvent[]> {
+  const rows = await db.select().from(serializationEvents);
+  return rows.map(toEvent);
 }

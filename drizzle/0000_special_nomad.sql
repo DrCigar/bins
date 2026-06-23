@@ -21,3 +21,13 @@ CREATE TABLE "serial_counters" (
 	"key" text PRIMARY KEY NOT NULL,
 	"n" integer NOT NULL
 );
+--> statement-breakpoint
+CREATE TABLE "serialization_events" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"serial" text NOT NULL,
+	"product_line" text,
+	"role" text NOT NULL,
+	"model" text NOT NULL,
+	"assembled_by" text,
+	"serialized_at" timestamp with time zone DEFAULT now() NOT NULL
+);

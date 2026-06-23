@@ -25,6 +25,17 @@ export const serialCounters = pgTable("serial_counters", {
   n: integer("n").notNull(),
 });
 
+export const serializationEvents = pgTable("serialization_events", {
+  id: serial("id").primaryKey(),
+  serial: text("serial").notNull(),
+  productLine: text("product_line"),
+  role: text("role").notNull(),
+  model: text("model").notNull(),
+  assembledBy: text("assembled_by"),
+  serializedAt: timestamp("serialized_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type MachineRow = typeof machines.$inferSelect;
 export type NewMachineRow = typeof machines.$inferInsert;
 export type SerialCounterRow = typeof serialCounters.$inferSelect;
+export type SerializationEventRow = typeof serializationEvents.$inferSelect;

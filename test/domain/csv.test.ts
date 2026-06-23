@@ -1,6 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { toCsv } from "@/lib/domain/csv";
-import type { Machine } from "@/lib/domain/types";
+import { toCsv, toSerializationCsv } from "@/lib/domain/csv";
+import type { Machine, SerializationEvent } from "@/lib/domain/types";
+
+describe("toSerializationCsv", () => {
+  it("writes a header and one row per event", () => {
+    const ev: SerializationEvent = {
+      id: 1, serial: "SMKP250423001", productLine: "360 Smoke", role: "Primary",
+      model: "Matsuda", assembledBy: "Thang", serializedAt: new Date(Date.UTC(2025, 3, 23)),
+    };
+    const lines = toSerializationCsv([ev]).trim().split("\n");
+    expect(lines[0]).toBe("serialized_at,serial,product_line,role,model,assembled_by");
+    expect(lines[1]).toContain("SMKP250423001,360 Smoke,Primary,Matsuda,Thang");
+  });
+});
 
 const base: Machine = {
   id: 1, serial: "S36250423001", model: "Matsuda", role: "Primary", status: "New",

@@ -20,6 +20,11 @@ beforeEach(async () => {
       unique(location, slot)
     );
     CREATE TABLE serial_counters (key text primary key, n integer not null);
+    CREATE TABLE serialization_events (
+      id serial primary key, serial text not null, product_line text,
+      role text not null, model text not null, assembled_by text,
+      serialized_at timestamptz not null default now()
+    );
   `);
 });
 
@@ -115,5 +120,12 @@ describe("repo.serializeBatch", () => {
   it("caps the batch at available staging slots (2 racks x 25)", async () => {
     const res = await repo.serializeBatch(db, args, 999);
     expect(res.length).toBe(50);
+  });
+  it("logs an event per serialized unit", async () => {
+    await repo.serializeBatch(db, args, 3);
+    const events = await repo.listSerializationEvents(db);
+    expect(events).toHaveLength(3);
+    expect(events[0]).toMatchObject({ productLine: "360 Smoke", role: "Primary", model: "Matsuda" });
+    expect(events[0].serial).toMatch(/^SMKP/);
   });
 });

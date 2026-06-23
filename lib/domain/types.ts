@@ -47,3 +47,14 @@ export interface Machine {
 }
 
 export const roleTag = (r: Role): string => (r === "Primary" ? "(P)" : "(S)");
+
+// Append-only record of each serialize event (permanent build-activity history).
+export interface SerializationEvent {
+  id: number;
+  serial: string;
+  productLine: ProductLine | null;
+  role: Role;
+  model: Model;
+  assembledBy: string | null;
+  serializedAt: Date;
+}
