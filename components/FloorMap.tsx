@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { Machine, PRE_DEPLOYMENT, OUTBOUND, INBOUND } from "@/lib/domain/types";
 import {
   RACKS, RACK_SLOTS, FLOOR, MAP_SCALE, ZONE_DIVIDER_Y,
@@ -14,6 +15,19 @@ export function FloorMap({
   onSelect: (label: string) => void;
 }) {
   const countAt = (label: string) => machines.filter((x) => x.location === label).length;
+  const [hover, setHover] = useState<{ label: string; x: number; y: number } | null>(null);
+
+  const hoverData = hover
+    ? (() => {
+        const here = machines.filter((m) => m.location === hover.label);
+        return {
+          total: here.length,
+          New: here.filter((m) => m.status === "New").length,
+          Used: here.filter((m) => m.status === "Used").length,
+          Broken: here.filter((m) => m.status === "Broken").length,
+        };
+      })()
+    : null;
 
   return (
     <div
@@ -87,7 +101,8 @@ export function FloorMap({
           <button
             key={r.label}
             onClick={() => onSelect(r.label)}
-            title={`Rack ${r.label} — ${countAt(r.label)}/${RACK_SLOTS}${r.isStaging ? " (staging)" : ""}`}
+            onMouseEnter={() => setHover({ label: r.label, x: r.x, y: r.y })}
+            onMouseLeave={() => setHover((h) => (h?.label === r.label ? null : h))}
             className={`absolute rounded-[5px] border flex items-center justify-center text-[11px] font-medium text-white ${
               r.isStaging ? "border-[#EF9F27] hover:border-[#FAC775]" : "border-white/20 hover:border-white/60"
             }`}
@@ -104,6 +119,21 @@ export function FloorMap({
           </button>
         );
       })}
+
+      {hover && hoverData && (
+        <div
+          className="absolute z-20 pointer-events-none bg-black/95 border border-pos-line rounded-md px-3 py-2 shadow-lg"
+          style={{ left: Math.min(s(hover.x) + 24, s(FLOOR.w) - 150), top: Math.max(s(hover.y) - 10, 4), width: 140 }}
+        >
+          <p className="text-xs font-medium text-white">Rack {hover.label}</p>
+          <p className="text-[11px] text-neutral-400">{hoverData.total}/{RACK_SLOTS} filled</p>
+          <div className="mt-1 flex gap-2 text-[10px]">
+            <span className="text-status-new">{hoverData.New} new</span>
+            <span className="text-status-used">{hoverData.Used} used</span>
+            <span className="text-status-broken">{hoverData.Broken} broken</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

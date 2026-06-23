@@ -10,7 +10,7 @@ import { CheckInDialog } from "@/components/CheckInDialog";
 import { CheckOutDialog } from "@/components/CheckOutDialog";
 import { SerializeDialog } from "@/components/SerializeDialog";
 import { fetcher } from "@/lib/fetcher";
-import { updateMachineAction, removeAction, checkInAction, moveAction } from "@/app/actions";
+import { updateMachineAction, removeAction, checkInAction, moveAction, moveManyAction } from "@/app/actions";
 import { RACKS, RACK_SLOTS } from "@/lib/layout/warehouse";
 import { Machine, PRE_DEPLOYMENT, OUTBOUND, INBOUND, isOpenArea } from "@/lib/domain/types";
 
@@ -30,7 +30,34 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
   const [serialize, setSerialize] = useState(false);
   const [checkIn, setCheckIn] = useState(false);
   const [checkOut, setCheckOut] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDest, setBulkDest] = useState("");
   const router = useRouter();
+
+  const toggleSelect = (id: number) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+
+  function exitSelect() {
+    setSelectMode(false); setSelectedIds(new Set()); setBulkDest(""); setError("");
+  }
+
+  async function doMoveMany() {
+    if (selectedIds.size === 0 || !bulkDest) return;
+    setError("");
+    try {
+      const { moved } = await moveManyAction([...selectedIds], bulkDest);
+      if (moved < selectedIds.size) setError(`Moved ${moved} of ${selectedIds.size} — destination ran out of room.`);
+      exitSelect();
+      mutate();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Move failed");
+    }
+  }
 
   function openSlot(slot: number | null, machine: Machine | null) {
     setError("");
@@ -93,16 +120,59 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
     mutate();
   }
 
+  function reprint() {
+    if (!edit?.machine?.serial) return;
+    sessionStorage.setItem("rl_print", JSON.stringify({ serials: [edit.machine.serial], printStyle: "roll" }));
+    window.open("/print", "_blank");
+  }
+
   const title = edit?.machine
     ? `Edit ${decoded}${edit.slot ? `-${String(edit.slot).padStart(2, "0")}` : ""}`
     : `Add to ${decoded}${edit?.slot ? `-${String(edit.slot).padStart(2, "0")}` : ""}`;
 
   return (
     <AppShell machines={machines} onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
-      <button onClick={() => router.push("/")} className="text-xs text-neutral-400 mb-3 hover:text-white">
-        ← Back to map
-      </button>
-      <RackDetail label={decoded} machines={machines} onSlotClick={openSlot} />
+      <div className="flex items-center gap-3 mb-3">
+        <button onClick={() => router.push("/")} className="text-xs text-neutral-400 hover:text-white">
+          ← Back to map
+        </button>
+        {machines.some((m) => m.location === decoded) && (
+          selectMode ? (
+            <button onClick={exitSelect} className="text-xs text-neutral-400 hover:text-white ml-auto">Cancel</button>
+          ) : (
+            <button onClick={() => setSelectMode(true)} className="text-xs text-pos-vermilion hover:underline ml-auto">
+              Move multiple
+            </button>
+          )
+        )}
+      </div>
+
+      {selectMode && (
+        <div className="mb-3 flex items-center gap-2 bg-pos-surface2 border border-pos-line rounded-md p-2 flex-wrap">
+          <span className="text-xs text-neutral-300">{selectedIds.size} selected → move to</span>
+          <select className="bg-pos-surface border border-pos-line rounded-md px-2 py-1 text-sm text-white" value={bulkDest} onChange={(e) => setBulkDest(e.target.value)}>
+            <option value="">Destination…</option>
+            {RACKS.filter((r) => r.label !== decoded).map((r) => <option key={r.label} value={r.label}>Rack {r.label}</option>)}
+            <option value={INBOUND}>{INBOUND}</option>
+            <option value={PRE_DEPLOYMENT}>{PRE_DEPLOYMENT}</option>
+            <option value={OUTBOUND}>{OUTBOUND}</option>
+          </select>
+          <button onClick={doMoveMany} disabled={!bulkDest || selectedIds.size === 0}
+            className="bg-pos-vermilion rounded-md px-3 py-1 text-sm font-medium disabled:opacity-50">
+            Move {selectedIds.size || ""}
+          </button>
+        </div>
+      )}
+      {selectMode && error && <p className="text-status-broken text-xs mb-2">{error}</p>}
+
+      <RackDetail
+        label={decoded}
+        machines={machines}
+        onSlotClick={openSlot}
+        selectMode={selectMode}
+        selectedIds={selectedIds}
+        onToggleSelect={toggleSelect}
+      />
 
       <Dialog open={!!edit} title={title} onClose={() => setEdit(null)}>
         <MachineForm value={form} onChange={setForm} lockSerial={!!edit?.machine?.serial} />
@@ -113,6 +183,11 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
           <button onClick={save} className="flex-1 bg-pos-vermilion rounded-md py-2 text-sm font-medium">
             Save
           </button>
+          {edit?.machine?.serial && (
+            <button onClick={reprint} className="px-3 rounded-md border border-pos-line text-sm hover:bg-neutral-900" title="Reprint this label">
+              Reprint
+            </button>
+          )}
           {edit?.machine && (
             <button onClick={doRemove} className="px-3 rounded-md border border-pos-line text-sm hover:bg-neutral-900">
               Remove

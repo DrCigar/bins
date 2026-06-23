@@ -21,7 +21,7 @@ export default function Home() {
   const broken = onHand.filter((m) => m.status === "Broken").length;
 
   return (
-    <AppShell machines={machines} onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
+    <AppShell machines={machines} autoFocusSearch onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
       <div className="mb-3 flex items-center gap-4">
         <div className="text-xs text-neutral-400 flex gap-4 ml-auto">
           <span><b className="text-white">{onHand.length}</b> on hand</span>

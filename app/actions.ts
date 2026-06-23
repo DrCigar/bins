@@ -109,6 +109,19 @@ export async function moveAction(id: number, location: string, slot: number | nu
   revalidatePath("/");
 }
 
+export async function moveManyAction(ids: number[], location: string): Promise<{ moved: number }> {
+  const db = await getReadyDb();
+  const cap = areaCapacity(location);
+  if (cap !== null) {
+    const here = (await repo.list(db)).filter((m) => m.location === location && !ids.includes(m.id)).length;
+    if (here + ids.length > cap) throw new Error(`${location} can't fit ${ids.length} more (max ${cap}).`);
+  }
+  const movedIds = await repo.moveMany(db, ids, location);
+  revalidatePath("/");
+  revalidatePath("/totals");
+  return { moved: movedIds.length };
+}
+
 export async function removeAction(id: number) {
   await repo.remove(await getReadyDb(), id);
   revalidatePath("/");

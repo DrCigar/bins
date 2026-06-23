@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { machines, MachineRow } from "./schema";
-import { Machine, Model, Role, Status, ProductLine, OUT } from "@/lib/domain/types";
+import { Machine, Model, Role, Status, ProductLine, OUT, isOpenArea } from "@/lib/domain/types";
 import { prefixFor, buildSerial } from "@/lib/domain/serial";
 import { STAGING_RACKS, RACK_SLOTS } from "@/lib/layout/warehouse";
 
@@ -70,6 +70,32 @@ export const checkOutToStore = (db: AnyDb, id: number, destination: string) =>
 // Stage into an open area (Inbound / Pre-Deployment / Outbound); clears any prior store checkout.
 export const stageInArea = (db: AnyDb, id: number, area: string) =>
   patch(db, id, { location: area, slot: null, destination: null, checkedOutAt: null });
+
+// Move several machines to a destination. Racks get the first open slots in order;
+// open areas take all (slot null). Returns the ids actually moved (capped by rack space).
+export async function moveMany(db: AnyDb, ids: number[], location: string): Promise<number[]> {
+  if (ids.length === 0) return [];
+  const all = await list(db);
+  const moving = all.filter((m) => ids.includes(m.id));
+  const isArea = isOpenArea(location);
+
+  let targets: Array<{ id: number; slot: number | null }>;
+  if (isArea) {
+    targets = moving.map((m) => ({ id: m.id, slot: null }));
+  } else {
+    const taken = new Set(
+      all.filter((m) => m.location === location && !ids.includes(m.id)).map((m) => m.slot),
+    );
+    const openSlots: number[] = [];
+    for (let s = 1; s <= RACK_SLOTS; s++) if (!taken.has(s)) openSlots.push(s);
+    targets = moving.slice(0, openSlots.length).map((m, i) => ({ id: m.id, slot: openSlots[i] }));
+  }
+
+  for (const t of targets) {
+    await patch(db, t.id, { location, slot: t.slot, destination: null, checkedOutAt: null });
+  }
+  return targets.map((t) => t.id);
+}
 
 // Atomic per-key counter; returns the new high-water mark after adding `count`.
 export async function allocateSequence(db: AnyDb, key: string, count: number): Promise<number> {

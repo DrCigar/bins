@@ -6,16 +6,16 @@ import { StatusBadge } from "./StatusBadge";
 const dotFor = (m: Machine) =>
   m.status === "New" ? "text-status-new" : m.status === "Used" ? "text-status-used" : "text-status-broken";
 
-function FilledCard({ label, m, onClick }: { label: string; m: Machine; onClick: () => void }) {
+function FilledCard({ label, m, onClick, selected = false }: { label: string; m: Machine; onClick: () => void; selected?: boolean }) {
   const missingSerial = !m.serial;
   return (
     <button
       onClick={onClick}
       className={`text-left rounded-md p-2 border bg-pos-surface hover:border-neutral-500 ${
-        missingSerial ? "border-status-broken animate-blink" : "border-pos-line"
+        selected ? "border-pos-vermilion ring-1 ring-pos-vermilion" : missingSerial ? "border-status-broken animate-blink" : "border-pos-line"
       }`}
     >
-      <p className="text-[10px] text-neutral-500">{label}</p>
+      <p className="text-[10px] text-neutral-500">{selected ? "✓ " : ""}{label}</p>
       <p className="text-xs font-medium">
         {m.model} <span className="text-neutral-400">{roleTag(m.role)}</span>
       </p>
@@ -33,13 +33,20 @@ function FilledCard({ label, m, onClick }: { label: string; m: Machine; onClick:
 }
 
 export function RackDetail({
-  label, machines, onSlotClick,
+  label, machines, onSlotClick, selectMode = false, selectedIds, onToggleSelect,
 }: {
   label: string;
   machines: Machine[];
   onSlotClick: (slot: number | null, machine: Machine | null) => void;
+  selectMode?: boolean;
+  selectedIds?: Set<number>;
+  onToggleSelect?: (id: number) => void;
 }) {
   const here = machines.filter((m) => m.location === label);
+  // In select mode, clicking a filled card toggles its selection instead of opening it.
+  const cardClick = (m: Machine, slot: number | null) =>
+    selectMode ? onToggleSelect?.(m.id) : onSlotClick(slot, m);
+  const isSel = (m: Machine) => Boolean(selectedIds?.has(m.id));
 
   if (isOpenArea(label)) {
     const capped = label === PRE_DEPLOYMENT;
@@ -52,9 +59,9 @@ export function RackDetail({
         </h2>
         <div className="grid grid-cols-5 gap-2">
           {here.map((m) => (
-            <FilledCard key={m.id} label={`#${m.id}`} m={m} onClick={() => onSlotClick(null, m)} />
+            <FilledCard key={m.id} label={`#${m.id}`} m={m} selected={isSel(m)} onClick={() => cardClick(m, null)} />
           ))}
-          {canAdd && (
+          {!selectMode && canAdd && (
             <button
               onClick={() => onSlotClick(null, null)}
               className="rounded-md p-2 border border-dashed border-pos-line text-xs text-neutral-600 hover:text-neutral-300 min-h-[64px]"
@@ -80,12 +87,13 @@ export function RackDetail({
           const m = bySlot.get(slotNum) ?? null;
           const slotLabel = `${label}-${String(slotNum).padStart(2, "0")}`;
           return m ? (
-            <FilledCard key={slotNum} label={slotLabel} m={m} onClick={() => onSlotClick(slotNum, m)} />
+            <FilledCard key={slotNum} label={slotLabel} m={m} selected={isSel(m)} onClick={() => cardClick(m, slotNum)} />
           ) : (
             <button
               key={slotNum}
+              disabled={selectMode}
               onClick={() => onSlotClick(slotNum, null)}
-              className="text-left rounded-md p-2 border border-dashed border-pos-line hover:border-neutral-500 min-h-[64px]"
+              className="text-left rounded-md p-2 border border-dashed border-pos-line hover:border-neutral-500 min-h-[64px] disabled:opacity-40"
             >
               <p className="text-[10px] text-neutral-500">{slotLabel}</p>
               <p className="text-xs text-neutral-600 mt-1">Empty · add</p>

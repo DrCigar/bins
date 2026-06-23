@@ -10,6 +10,13 @@ import { serializeAction } from "@/app/actions";
 const field = "bg-pos-surface2 border border-pos-line rounded-md px-3 py-2 text-sm w-full mt-1 text-white";
 const todayStr = (): string => new Date().toISOString().slice(0, 10);
 
+const DEFAULTS_KEY = "rl_serialize_defaults";
+type SerializeDefaults = { productLine: ProductLine; role: Role; model: Model; assembledBy: string; printStyle: "roll" | "sheet" };
+function loadDefaults(): Partial<SerializeDefaults> {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(window.localStorage.getItem(DEFAULTS_KEY) ?? "{}"); } catch { return {}; }
+}
+
 export function SerializeDialog({
   open, onClose, onDone,
 }: {
@@ -17,14 +24,15 @@ export function SerializeDialog({
   onClose: () => void;
   onDone: () => void;
 }) {
-  const [productLine, setProductLine] = useState<ProductLine>("360 Pro");
-  const [role, setRole] = useState<Role>("Primary");
-  const [model, setModel] = useState<Model>("Matsuda");
+  const d = loadDefaults();
+  const [productLine, setProductLine] = useState<ProductLine>(d.productLine ?? "360 Pro");
+  const [role, setRole] = useState<Role>(d.role ?? "Primary");
+  const [model, setModel] = useState<Model>(d.model ?? "Matsuda");
   const [status, setStatus] = useState<Status>("New");
-  const [assembledBy, setAssembledBy] = useState<string>(ASSEMBLERS[0]);
+  const [assembledBy, setAssembledBy] = useState<string>(d.assembledBy ?? ASSEMBLERS[0]);
   const [date, setDate] = useState<string>(todayStr());
   const [quantity, setQuantity] = useState<number>(1);
-  const [printStyle, setPrintStyle] = useState<"roll" | "sheet">("roll");
+  const [printStyle, setPrintStyle] = useState<"roll" | "sheet">(d.printStyle ?? "roll");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<Array<{ serial: string; location: string; slot: number | null }> | null>(null);
@@ -46,6 +54,9 @@ export function SerializeDialog({
         setError("Staging racks (I, J) are full — free up space or lower the quantity.");
         return;
       }
+      try {
+        window.localStorage.setItem(DEFAULTS_KEY, JSON.stringify({ productLine, role, model, assembledBy, printStyle }));
+      } catch { /* ignore storage errors */ }
       setShortfall(created.length < quantity);
       setResult(created);
       onDone();

@@ -5,13 +5,14 @@ import { SerialSearch } from "./SerialSearch";
 import { Machine } from "@/lib/domain/types";
 
 export function AppShell({
-  children, machines, onSerialize, onCheckIn, onCheckOut,
+  children, machines, onSerialize, onCheckIn, onCheckOut, autoFocusSearch = false,
 }: {
   children: React.ReactNode;
   machines: Machine[];
   onSerialize: () => void;
   onCheckIn: () => void;
   onCheckOut: () => void;
+  autoFocusSearch?: boolean;
 }) {
   const path = usePathname();
   const tab = (href: string, label: string) => (
@@ -36,7 +37,7 @@ export function AppShell({
           <p className="text-sm font-medium">Register Locator</p>
           <p className="text-[10px] tracking-[0.18em] text-neutral-500">SYSTEMS MADE SIMPLE</p>
         </div>
-        <div className="ml-2"><SerialSearch machines={machines} /></div>
+        <div className="ml-2"><SerialSearch machines={machines} autoFocus={autoFocusSearch} /></div>
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={onSerialize}
