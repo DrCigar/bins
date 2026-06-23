@@ -1,6 +1,8 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { machines, MachineRow } from "./schema";
-import { Machine, Model, Role, Status, OUT } from "@/lib/domain/types";
+import { Machine, Model, Role, Status, ProductLine, OUT } from "@/lib/domain/types";
+import { prefixFor, buildSerial } from "@/lib/domain/serial";
+import { STAGING_RACKS, RACK_SLOTS } from "@/lib/layout/warehouse";
 
 // Accepts either the Neon-backed or PGlite-backed Drizzle instance.
 type AnyDb = any;
@@ -10,6 +12,7 @@ const toMachine = (r: MachineRow): Machine => ({
   model: r.model as Model,
   role: r.role as Role,
   status: r.status as Status,
+  productLine: (r.productLine as ProductLine) ?? null,
 });
 
 export interface CheckInArgs {
@@ -17,6 +20,8 @@ export interface CheckInArgs {
   model: Model;
   role: Role;
   status: Status;
+  productLine: ProductLine | null;
+  assembledBy: string | null;
   notes: string | null;
   location: string;
   slot: number | null;
@@ -52,7 +57,7 @@ export const move = (db: AnyDb, id: number, to: { location: string; slot: number
 export const update = (
   db: AnyDb,
   id: number,
-  fields: Partial<Pick<MachineRow, "serial" | "model" | "role" | "status" | "notes">>,
+  fields: Partial<Pick<MachineRow, "serial" | "model" | "role" | "status" | "productLine" | "assembledBy" | "notes">>,
 ) => patch(db, id, fields);
 
 export const remove = async (db: AnyDb, id: number): Promise<void> => {
@@ -62,6 +67,59 @@ export const remove = async (db: AnyDb, id: number): Promise<void> => {
 export const checkOutToStore = (db: AnyDb, id: number, destination: string) =>
   patch(db, id, { location: OUT, slot: null, destination, checkedOutAt: new Date() });
 
-// Stage into an open area (Pre-Deployment or Outbound); clears any prior store checkout.
+// Stage into an open area (Inbound / Pre-Deployment / Outbound); clears any prior store checkout.
 export const stageInArea = (db: AnyDb, id: number, area: string) =>
   patch(db, id, { location: area, slot: null, destination: null, checkedOutAt: null });
+
+// Atomic per-key counter; returns the new high-water mark after adding `count`.
+export async function allocateSequence(db: AnyDb, key: string, count: number): Promise<number> {
+  const res = await db.execute(sql`
+    INSERT INTO serial_counters (key, n) VALUES (${key}, ${count})
+    ON CONFLICT (key) DO UPDATE SET n = serial_counters.n + ${count}
+    RETURNING n
+  `);
+  const rows = (res as { rows?: Array<{ n: number }> }).rows ?? (res as Array<{ n: number }>);
+  return Number(rows[0].n);
+}
+
+export interface SerializeArgs {
+  productLine: ProductLine;
+  role: Role;
+  model: Model;
+  status: Status;
+  assembledBy: string | null;
+  notes: string | null;
+  date: Date;
+}
+
+// Generate `quantity` sequential serials and place the units into staging racks (in order).
+// Caps at the number of open staging slots.
+export async function serializeBatch(db: AnyDb, args: SerializeArgs, quantity: number): Promise<Machine[]> {
+  const existing = await list(db);
+  const open: Array<{ location: string; slot: number }> = [];
+  for (const rack of STAGING_RACKS) {
+    const taken = new Set(existing.filter((m) => m.location === rack).map((m) => m.slot));
+    for (let s = 1; s <= RACK_SLOTS; s++) if (!taken.has(s)) open.push({ location: rack, slot: s });
+  }
+  const n = Math.min(quantity, open.length);
+  if (n === 0) return [];
+
+  const prefix = prefixFor(args.productLine, args.role);
+  const dateKey = buildSerial(prefix, args.date, 0).slice(prefix.length, prefix.length + 6); // YYMMDD
+  const high = await allocateSequence(db, `${prefix}${dateKey}`, n);
+  const startSeq = high - n + 1;
+
+  const values = Array.from({ length: n }, (_, i) => ({
+    serial: buildSerial(prefix, args.date, startSeq + i),
+    model: args.model,
+    role: args.role,
+    status: args.status,
+    productLine: args.productLine,
+    assembledBy: args.assembledBy,
+    notes: args.notes,
+    location: open[i].location,
+    slot: open[i].slot,
+  }));
+  const inserted = await db.insert(machines).values(values).returning();
+  return inserted.map(toMachine);
+}

@@ -7,15 +7,27 @@ export type Role = (typeof ROLES)[number];
 export const STATUSES = ["New", "Used", "Broken"] as const;
 export type Status = (typeof STATUSES)[number];
 
+export const PRODUCT_LINES = ["360 Pro", "360 Smoke"] as const;
+export type ProductLine = (typeof PRODUCT_LINES)[number];
+
+export const ASSEMBLERS = ["Thang", "Jeremy"] as const;
+
+// Serial prefix per product line + role (e.g. 360 Smoke Primary -> SMKP).
+export const SERIAL_PREFIX: Record<ProductLine, Record<Role, string>> = {
+  "360 Pro": { Primary: "S36P", Secondary: "S36S" },
+  "360 Smoke": { Primary: "SMKP", Secondary: "SMKS" },
+};
+
 // location is a rack label (e.g. "A"), an open area, or "Out" (checked out to a store)
 export const PRE_DEPLOYMENT = "Pre-Deployment";
 export const OUTBOUND = "Outbound";
+export const INBOUND = "Inbound";
 export const OUT = "Out";
 
-// Open staging areas (no fixed slots). Pre-Deployment is capped; Outbound is unlimited.
-export const OPEN_AREAS = [PRE_DEPLOYMENT, OUTBOUND] as const;
+// Open drop areas (no fixed slots). Inbound/Pre-Deployment are capped; Outbound is unlimited.
+export const OPEN_AREAS = [INBOUND, PRE_DEPLOYMENT, OUTBOUND] as const;
 export const isOpenArea = (location: string): boolean =>
-  location === PRE_DEPLOYMENT || location === OUTBOUND;
+  location === INBOUND || location === PRE_DEPLOYMENT || location === OUTBOUND;
 
 export interface Machine {
   id: number;
@@ -23,6 +35,8 @@ export interface Machine {
   model: Model;
   role: Role;
   status: Status;
+  productLine: ProductLine | null;
+  assembledBy: string | null;
   notes: string | null;
   location: string;
   slot: number | null;

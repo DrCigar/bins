@@ -6,6 +6,8 @@ export const machines = pgTable("machines", {
   model: text("model").notNull(),
   role: text("role").notNull(),
   status: text("status").notNull(),
+  productLine: text("product_line"),
+  assembledBy: text("assembled_by"),
   notes: text("notes"),
   location: text("location").notNull(),
   slot: integer("slot"),
@@ -18,5 +20,11 @@ export const machines = pgTable("machines", {
   slotUnique: unique("machines_location_slot_unique").on(t.location, t.slot),
 }));
 
+export const serialCounters = pgTable("serial_counters", {
+  key: text("key").primaryKey(),
+  n: integer("n").notNull(),
+});
+
 export type MachineRow = typeof machines.$inferSelect;
 export type NewMachineRow = typeof machines.$inferInsert;
+export type SerialCounterRow = typeof serialCounters.$inferSelect;

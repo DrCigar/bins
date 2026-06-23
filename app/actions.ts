@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getReadyDb } from "@/lib/db/client";
 import * as repo from "@/lib/db/repo";
-import { MODELS, ROLES, STATUSES, Model, Role, Status } from "@/lib/domain/types";
+import { MODELS, ROLES, STATUSES, PRODUCT_LINES, Model, Role, Status, ProductLine } from "@/lib/domain/types";
 import { isValidPasscode, COOKIE_NAME } from "@/lib/auth";
 
 const assertEnum = <T extends readonly string[]>(set: T, v: string, name: string): T[number] => {
@@ -25,6 +25,8 @@ export async function checkInAction(input: {
   model: string;
   role: string;
   status: string;
+  productLine?: string | null;
+  assembledBy?: string | null;
   notes: string | null;
   location: string;
   slot: number | null;
@@ -34,6 +36,8 @@ export async function checkInAction(input: {
     model: assertEnum(MODELS, input.model, "model") as Model,
     role: assertEnum(ROLES, input.role, "role") as Role,
     status: assertEnum(STATUSES, input.status, "status") as Status,
+    productLine: input.productLine ? (assertEnum(PRODUCT_LINES, input.productLine, "product line") as ProductLine) : null,
+    assembledBy: input.assembledBy?.trim() || null,
     notes: input.notes?.trim() || null,
     location: input.location,
     slot: input.slot,
@@ -42,15 +46,41 @@ export async function checkInAction(input: {
   revalidatePath("/totals");
 }
 
+export async function serializeAction(input: {
+  productLine: string;
+  role: string;
+  model: string;
+  status: string;
+  assembledBy: string | null;
+  notes: string | null;
+  date: string; // YYYY-MM-DD
+  quantity: number;
+}): Promise<{ serials: string[] }> {
+  const created = await repo.serializeBatch(await getReadyDb(), {
+    productLine: assertEnum(PRODUCT_LINES, input.productLine, "product line") as ProductLine,
+    role: assertEnum(ROLES, input.role, "role") as Role,
+    model: assertEnum(MODELS, input.model, "model") as Model,
+    status: assertEnum(STATUSES, input.status, "status") as Status,
+    assembledBy: input.assembledBy?.trim() || null,
+    notes: input.notes?.trim() || null,
+    date: new Date(input.date + "T00:00:00Z"),
+  }, Math.max(1, Math.floor(input.quantity)));
+  revalidatePath("/");
+  revalidatePath("/totals");
+  return { serials: created.map((m) => m.serial).filter((s): s is string => Boolean(s)) };
+}
+
 export async function updateMachineAction(
   id: number,
-  fields: { serial?: string | null; model?: string; role?: string; status?: string; notes?: string | null },
+  fields: { serial?: string | null; model?: string; role?: string; status?: string; productLine?: string; assembledBy?: string | null; notes?: string | null },
 ) {
   await repo.update(await getReadyDb(), id, {
     ...(fields.serial !== undefined ? { serial: fields.serial?.trim() || null } : {}),
     ...(fields.model ? { model: assertEnum(MODELS, fields.model, "model") } : {}),
     ...(fields.role ? { role: assertEnum(ROLES, fields.role, "role") } : {}),
     ...(fields.status ? { status: assertEnum(STATUSES, fields.status, "status") } : {}),
+    ...(fields.productLine ? { productLine: assertEnum(PRODUCT_LINES, fields.productLine, "product line") } : {}),
+    ...(fields.assembledBy !== undefined ? { assembledBy: fields.assembledBy?.trim() || null } : {}),
     ...(fields.notes !== undefined ? { notes: fields.notes?.trim() || null } : {}),
   });
   revalidatePath("/");

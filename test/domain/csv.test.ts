@@ -4,6 +4,7 @@ import type { Machine } from "@/lib/domain/types";
 
 const base: Machine = {
   id: 1, serial: "S36250423001", model: "Matsuda", role: "Primary", status: "New",
+  productLine: "360 Pro", assembledBy: null,
   notes: null, location: "A", slot: 3, destination: null, checkedOutAt: null,
   createdAt: new Date(Date.UTC(2025, 3, 23)), updatedAt: new Date(Date.UTC(2025, 3, 24)),
 };

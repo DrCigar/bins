@@ -4,6 +4,8 @@ CREATE TABLE "machines" (
 	"model" text NOT NULL,
 	"role" text NOT NULL,
 	"status" text NOT NULL,
+	"product_line" text,
+	"assembled_by" text,
 	"notes" text,
 	"location" text NOT NULL,
 	"slot" integer,
@@ -13,4 +15,9 @@ CREATE TABLE "machines" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "machines_serial_unique" UNIQUE("serial"),
 	CONSTRAINT "machines_location_slot_unique" UNIQUE("location","slot")
+);
+--> statement-breakpoint
+CREATE TABLE "serial_counters" (
+	"key" text PRIMARY KEY NOT NULL,
+	"n" integer NOT NULL
 );

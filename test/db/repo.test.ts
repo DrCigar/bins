@@ -13,17 +13,20 @@ beforeEach(async () => {
       id serial primary key,
       serial text unique,
       model text not null, role text not null, status text not null,
+      product_line text, assembled_by text,
       notes text, location text not null, slot integer, destination text,
       checked_out_at timestamptz, created_at timestamptz not null default now(),
       updated_at timestamptz not null default now(),
       unique(location, slot)
     );
+    CREATE TABLE serial_counters (key text primary key, n integer not null);
   `);
 });
 
 const checkInArgs = {
   serial: "S36250423001", model: "Matsuda" as const, role: "Primary" as const,
-  status: "New" as const, notes: null, location: "A", slot: 1,
+  status: "New" as const, productLine: "360 Pro" as const, assembledBy: null,
+  notes: null, location: "A", slot: 1,
 };
 
 describe("repo.checkIn", () => {
@@ -85,5 +88,32 @@ describe("repo.findBySerial / list", () => {
     await repo.checkIn(db, checkInArgs);
     expect((await repo.findBySerial(db, "S36250423001"))?.location).toBe("A");
     expect(await repo.list(db)).toHaveLength(1);
+  });
+});
+
+describe("repo.allocateSequence", () => {
+  it("increments per key and returns the new high-water mark", async () => {
+    expect(await repo.allocateSequence(db, "S36P250423", 1)).toBe(1);
+    expect(await repo.allocateSequence(db, "S36P250423", 3)).toBe(4); // 2,3,4
+    expect(await repo.allocateSequence(db, "SMKP250423", 1)).toBe(1); // separate key
+  });
+});
+
+describe("repo.serializeBatch", () => {
+  const args = {
+    productLine: "360 Smoke" as const, role: "Primary" as const,
+    model: "Matsuda" as const, status: "New" as const,
+    assembledBy: "Thang", notes: null, date: new Date(Date.UTC(2025, 3, 23)),
+  };
+  it("creates N units with sequential serials placed into staging racks", async () => {
+    const created = await repo.serializeBatch(db, args, 3);
+    expect(created.map((m) => m.serial)).toEqual(["SMKP250423001", "SMKP250423002", "SMKP250423003"]);
+    expect(created.every((m) => ["I", "J"].includes(m.location))).toBe(true);
+    expect(created[0].location).toBe("I");
+    expect(created[0].slot).toBe(1);
+  });
+  it("caps the batch at available staging slots (2 racks x 25)", async () => {
+    const res = await repo.serializeBatch(db, args, 999);
+    expect(res.length).toBe(50);
   });
 });
