@@ -27,23 +27,28 @@ export function SerializeDialog({
   const [printStyle, setPrintStyle] = useState<"roll" | "sheet">("roll");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [result, setResult] = useState<Array<{ serial: string; location: string; slot: number | null }> | null>(null);
+  const [shortfall, setShortfall] = useState(false);
+
+  function reset() {
+    setResult(null); setError(""); setShortfall(false); setQuantity(1);
+  }
+  function close() { reset(); onClose(); }
 
   async function submit() {
     setError("");
     setBusy(true);
     try {
-      const { serials } = await serializeAction({
+      const { created } = await serializeAction({
         productLine, role, model, status, assembledBy, notes: null, date, quantity,
       });
-      if (serials.length === 0) {
+      if (created.length === 0) {
         setError("Staging racks (I, J) are full — free up space or lower the quantity.");
         return;
       }
-      if (serials.length < quantity) setError(`Only ${serials.length} fit in staging; printing those.`);
-      sessionStorage.setItem("rl_print", JSON.stringify({ serials, printStyle }));
-      window.open("/print", "_blank");
+      setShortfall(created.length < quantity);
+      setResult(created);
       onDone();
-      onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Serialize failed");
     } finally {
@@ -51,8 +56,50 @@ export function SerializeDialog({
     }
   }
 
+  // Called from a button click (user gesture) so the print tab isn't popup-blocked.
+  function printLabels() {
+    if (!result) return;
+    sessionStorage.setItem("rl_print", JSON.stringify({ serials: result.map((r) => r.serial), printStyle }));
+    window.open("/print", "_blank");
+  }
+
+  if (result) {
+    const stagedAt = result.map((r) => `${r.location}-${String(r.slot ?? "").padStart(2, "0")}`).join(", ");
+    return (
+      <Dialog open={open} title="Serialized" onClose={close}>
+        <div className="flex flex-col gap-3">
+          <div className="rounded-md border border-status-new/40 bg-status-new/10 p-3">
+            <p className="text-sm font-medium text-status-new">
+              ✓ {result.length} register{result.length > 1 ? "s" : ""} serialized
+            </p>
+            <p className="text-xs text-neutral-300 mt-1">
+              Automatically placed in the Staging area: <span className="font-medium">{stagedAt}</span>
+            </p>
+          </div>
+          {shortfall && (
+            <p className="text-status-used text-xs">Staging filled up — only {result.length} of the batch fit. Move some out, then serialize the rest.</p>
+          )}
+          <div className="text-[11px] text-neutral-500 max-h-24 overflow-auto">
+            {result.map((r) => <div key={r.serial}>{r.serial}</div>)}
+          </div>
+          <div className="flex gap-2 mt-1">
+            <button onClick={printLabels} className="flex-1 bg-pos-vermilion rounded-md py-2 text-sm font-medium">
+              Print labels
+            </button>
+            <button onClick={reset} className="px-3 rounded-md border border-pos-line text-sm hover:bg-neutral-900">
+              Serialize more
+            </button>
+            <button onClick={close} className="px-3 rounded-md border border-pos-line text-sm hover:bg-neutral-900">
+              Done
+            </button>
+          </div>
+        </div>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} title="Serialize a register" onClose={onClose}>
+    <Dialog open={open} title="Serialize a register" onClose={close}>
       <div className="flex flex-col gap-3">
         <label className="text-xs text-neutral-400">Product line
           <select className={field} value={productLine} onChange={(e) => setProductLine(e.target.value as ProductLine)}>

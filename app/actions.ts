@@ -66,7 +66,7 @@ export async function serializeAction(input: {
   notes: string | null;
   date: string; // YYYY-MM-DD
   quantity: number;
-}): Promise<{ serials: string[] }> {
+}): Promise<{ created: Array<{ serial: string; location: string; slot: number | null }> }> {
   const created = await repo.serializeBatch(await getReadyDb(), {
     productLine: assertEnum(PRODUCT_LINES, input.productLine, "product line") as ProductLine,
     role: assertEnum(ROLES, input.role, "role") as Role,
@@ -78,7 +78,11 @@ export async function serializeAction(input: {
   }, Math.max(1, Math.floor(input.quantity)));
   revalidatePath("/");
   revalidatePath("/totals");
-  return { serials: created.map((m) => m.serial).filter((s): s is string => Boolean(s)) };
+  return {
+    created: created
+      .filter((m): m is typeof m & { serial: string } => Boolean(m.serial))
+      .map((m) => ({ serial: m.serial, location: m.location, slot: m.slot })),
+  };
 }
 
 export async function updateMachineAction(
