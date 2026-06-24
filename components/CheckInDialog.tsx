@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Dialog } from "./Dialog";
 import { MachineForm, MachineFormValue, emptyMachineForm } from "./MachineForm";
-import { RACKS, RACK_SLOTS } from "@/lib/layout/warehouse";
+import { RACKS, rackCapacity } from "@/lib/layout/warehouse";
 import { PRE_DEPLOYMENT, OUTBOUND, INBOUND, Machine, isOpenArea } from "@/lib/domain/types";
 import { checkInAction } from "@/app/actions";
 
@@ -27,7 +27,7 @@ export function CheckInDialog({
   const takenSlots = new Set(machines.filter((m) => m.location === location).map((m) => m.slot));
   const openSlots = isOpenArea(location)
     ? []
-    : Array.from({ length: RACK_SLOTS }, (_, i) => i + 1).filter((s) => !takenSlots.has(s));
+    : Array.from({ length: rackCapacity(location) }, (_, i) => i + 1).filter((s) => !takenSlots.has(s));
 
   async function submit() {
     setError("");

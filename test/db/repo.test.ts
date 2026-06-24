@@ -113,13 +113,13 @@ describe("repo.serializeBatch", () => {
   it("creates N units with sequential serials placed into staging racks", async () => {
     const created = await repo.serializeBatch(db, args, 3);
     expect(created.map((m) => m.serial)).toEqual(["SMKP250423001", "SMKP250423002", "SMKP250423003"]);
-    expect(created.every((m) => ["I", "J"].includes(m.location))).toBe(true);
-    expect(created[0].location).toBe("I");
+    expect(created.every((m) => ["HH", "II"].includes(m.location))).toBe(true);
+    expect(created[0].location).toBe("HH");
     expect(created[0].slot).toBe(1);
   });
-  it("caps the batch at available staging slots (2 racks x 25)", async () => {
+  it("caps the batch at available staging slots (HH + II = 16 + 16)", async () => {
     const res = await repo.serializeBatch(db, args, 999);
-    expect(res.length).toBe(50);
+    expect(res.length).toBe(32);
   });
   it("logs an event per serialized unit", async () => {
     await repo.serializeBatch(db, args, 3);

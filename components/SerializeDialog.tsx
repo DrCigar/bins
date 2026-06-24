@@ -51,7 +51,7 @@ export function SerializeDialog({
         productLine, role, model, status, assembledBy, notes: null, date, quantity,
       });
       if (created.length === 0) {
-        setError("Staging racks (I, J) are full — free up space or lower the quantity.");
+        setError("Staging racks (HH, II) are full — free up space or lower the quantity.");
         return;
       }
       try {

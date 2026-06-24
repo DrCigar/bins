@@ -1,6 +1,6 @@
 "use client";
 import { Machine, roleTag, isOpenArea, PRE_DEPLOYMENT } from "@/lib/domain/types";
-import { RACK_SLOTS, PRE_DEPLOYMENT_CAPACITY } from "@/lib/layout/warehouse";
+import { rackCapacity, rackCols, slotLabel, PRE_DEPLOYMENT_CAPACITY } from "@/lib/layout/warehouse";
 import { StatusBadge } from "./StatusBadge";
 
 const dotFor = (m: Machine) =>
@@ -74,20 +74,22 @@ export function RackDetail({
     );
   }
 
+  const capacity = rackCapacity(label);
+  const cols = rackCols(label);
   const bySlot = new Map(here.map((m) => [m.slot, m]));
-  const slots = Array.from({ length: RACK_SLOTS }, (_, i) => i + 1);
+  const slots = Array.from({ length: capacity }, (_, i) => i + 1);
 
   return (
     <div>
       <h2 className="text-base font-medium mb-3">
-        Rack {label} <span className="text-neutral-500 text-sm">· {here.length}/{RACK_SLOTS}</span>
+        Rack {label} <span className="text-neutral-500 text-sm">· {here.length}/{capacity}</span>
       </h2>
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, maxWidth: cols <= 2 ? 260 : undefined }}>
         {slots.map((slotNum) => {
           const m = bySlot.get(slotNum) ?? null;
-          const slotLabel = `${label}-${String(slotNum).padStart(2, "0")}`;
+          const cellLabel = slotLabel(label, slotNum);
           return m ? (
-            <FilledCard key={slotNum} label={slotLabel} m={m} selected={isSel(m)} onClick={() => cardClick(m, slotNum)} />
+            <FilledCard key={slotNum} label={cellLabel} m={m} selected={isSel(m)} onClick={() => cardClick(m, slotNum)} />
           ) : (
             <button
               key={slotNum}
@@ -95,7 +97,7 @@ export function RackDetail({
               onClick={() => onSlotClick(slotNum, null)}
               className="text-left rounded-md p-2 border border-dashed border-pos-line hover:border-neutral-500 min-h-[64px] disabled:opacity-40"
             >
-              <p className="text-[10px] text-neutral-500">{slotLabel}</p>
+              <p className="text-[10px] text-neutral-500">{cellLabel}</p>
               <p className="text-xs text-neutral-600 mt-1">Empty · add</p>
             </button>
           );

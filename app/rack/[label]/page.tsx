@@ -11,7 +11,7 @@ import { CheckOutDialog } from "@/components/CheckOutDialog";
 import { SerializeDialog } from "@/components/SerializeDialog";
 import { fetcher } from "@/lib/fetcher";
 import { updateMachineAction, removeAction, checkInAction, moveAction, moveManyAction } from "@/app/actions";
-import { RACKS, RACK_SLOTS } from "@/lib/layout/warehouse";
+import { RACKS, rackCapacity } from "@/lib/layout/warehouse";
 import { Machine, PRE_DEPLOYMENT, OUTBOUND, INBOUND, isOpenArea } from "@/lib/domain/types";
 
 const emptyForm = emptyMachineForm;
@@ -76,7 +76,7 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
 
   const takenAt = (loc: string) => new Set(machines.filter((m) => m.location === loc).map((m) => m.slot));
   const openSlotsAt = (loc: string) =>
-    isOpenArea(loc) ? [] : Array.from({ length: RACK_SLOTS }, (_, i) => i + 1).filter((s) => !takenAt(loc).has(s));
+    isOpenArea(loc) ? [] : Array.from({ length: rackCapacity(loc) }, (_, i) => i + 1).filter((s) => !takenAt(loc).has(s));
 
   async function save() {
     if (!edit) return;

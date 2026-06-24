@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { machines, serializationEvents, MachineRow, SerializationEventRow } from "./schema";
 import { Machine, Model, Role, Status, ProductLine, SerializationEvent, OUT, isOpenArea } from "@/lib/domain/types";
 import { prefixFor, buildSerial } from "@/lib/domain/serial";
-import { STAGING_RACKS, RACK_SLOTS } from "@/lib/layout/warehouse";
+import { STAGING_RACKS, rackCapacity } from "@/lib/layout/warehouse";
 
 // Accepts either the Neon-backed or PGlite-backed Drizzle instance.
 type AnyDb = any;
@@ -87,7 +87,7 @@ export async function moveMany(db: AnyDb, ids: number[], location: string): Prom
       all.filter((m) => m.location === location && !ids.includes(m.id)).map((m) => m.slot),
     );
     const openSlots: number[] = [];
-    for (let s = 1; s <= RACK_SLOTS; s++) if (!taken.has(s)) openSlots.push(s);
+    for (let s = 1; s <= rackCapacity(location); s++) if (!taken.has(s)) openSlots.push(s);
     targets = moving.slice(0, openSlots.length).map((m, i) => ({ id: m.id, slot: openSlots[i] }));
   }
 
@@ -125,7 +125,7 @@ export async function serializeBatch(db: AnyDb, args: SerializeArgs, quantity: n
   const open: Array<{ location: string; slot: number }> = [];
   for (const rack of STAGING_RACKS) {
     const taken = new Set(existing.filter((m) => m.location === rack).map((m) => m.slot));
-    for (let s = 1; s <= RACK_SLOTS; s++) if (!taken.has(s)) open.push({ location: rack, slot: s });
+    for (let s = 1; s <= rackCapacity(rack); s++) if (!taken.has(s)) open.push({ location: rack, slot: s });
   }
   const n = Math.min(quantity, open.length);
   if (n === 0) return [];
