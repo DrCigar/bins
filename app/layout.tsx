@@ -24,7 +24,14 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${figtree.variable} ${dmSerif.variable} h-full antialiased`}>
-      <body className="min-h-full bg-pos-black text-white">{children}</body>
+      <body className="min-h-full bg-pos-black text-white">
+        <div
+          aria-hidden
+          className="fixed inset-0 -z-10"
+          style={{ backgroundColor: "#000000", backgroundImage: "url(/honeycomb.svg)", backgroundSize: "48px auto" }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
