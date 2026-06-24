@@ -28,7 +28,13 @@ export default function RootLayout({
         <div
           aria-hidden
           className="fixed inset-0 -z-10"
-          style={{ backgroundColor: "#000000", backgroundImage: "url(/honeycomb.svg)", backgroundSize: "48px auto" }}
+          style={{
+            backgroundColor: "#000000",
+            backgroundImage: "linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.7)), url(/honeycomb-bg.jpg)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
         />
         {children}
       </body>
