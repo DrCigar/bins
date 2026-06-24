@@ -30,7 +30,7 @@ export default function RootLayout({
           className="fixed inset-0 -z-10"
           style={{
             backgroundColor: "#000000",
-            backgroundImage: "linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.7)), url(/honeycomb-bg.jpg)",
+            backgroundImage: "linear-gradient(rgba(0,0,0,0.30), rgba(0,0,0,0.45)), url(/honeycomb-bg.jpg)",
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
