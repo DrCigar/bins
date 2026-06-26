@@ -29,14 +29,16 @@ export function AppShell({
 
   return (
     <div>
-      <header className="flex items-center gap-3 px-4 py-3 bg-black border-l-4 border-pos-vermilion flex-wrap">
-        <Image src="/pos360-logo.png" alt="POS360" width={104} height={28} priority />
-        <span className="w-px h-4 bg-neutral-700" />
-        <div className="leading-tight">
-          <p className="text-sm font-medium">Register Locator</p>
-          <p className="text-[10px] tracking-[0.18em] text-neutral-500">SYSTEMS MADE SIMPLE</p>
-        </div>
-        <div className="ml-2"><SerialSearch machines={machines} autoFocus={autoFocusSearch} /></div>
+      <header className="relative flex items-center gap-3 px-4 py-3 bg-black border-l-4 border-pos-vermilion flex-wrap">
+        <Image
+          src="/pos360-logo.png"
+          alt="POS360"
+          width={224}
+          height={60}
+          priority
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+        />
+        <div><SerialSearch machines={machines} autoFocus={autoFocusSearch} /></div>
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={onSerialize}
