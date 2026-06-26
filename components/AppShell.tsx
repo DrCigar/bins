@@ -30,7 +30,7 @@ export function AppShell({
   return (
     <div>
       <header className="flex items-center gap-3 px-4 py-3 bg-black border-l-4 border-pos-vermilion flex-wrap">
-        <Image src="/pos360-logo.png" alt="POS360" width={121} height={28} priority />
+        <Image src="/pos360-logo.png" alt="POS360" width={104} height={28} priority />
         <span className="w-px h-4 bg-neutral-700" />
         <div className="leading-tight">
           <p className="text-sm font-medium">Register Locator</p>

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { unlockAction } from "@/app/actions";
 
@@ -22,10 +23,8 @@ export default function UnlockPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-5">
-      <div className="text-2xl font-bold">
-        POS<span className="text-pos-vermilion">360</span>
-      </div>
-      <p className="text-xs tracking-[0.18em] text-neutral-500 -mt-3">SYSTEMS MADE SIMPLE</p>
+      <Image src="/pos360-logo.png" alt="POS360" width={224} height={60} priority />
+      <p className="text-xs tracking-[0.18em] text-neutral-500 -mt-2">SYSTEMS MADE SIMPLE</p>
       <form action={onSubmit} className="flex flex-col gap-3 w-72">
         <input
           name="passcode"
