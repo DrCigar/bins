@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { SerialSearch } from "./SerialSearch";
 import { Machine } from "@/lib/domain/types";
@@ -29,9 +30,7 @@ export function AppShell({
   return (
     <div>
       <header className="flex items-center gap-3 px-4 py-3 bg-black border-l-4 border-pos-vermilion flex-wrap">
-        <span className="text-lg font-bold">
-          POS<span className="text-pos-vermilion">360</span>
-        </span>
+        <Image src="/pos360-logo.png" alt="POS360" width={121} height={28} priority />
         <span className="w-px h-4 bg-neutral-700" />
         <div className="leading-tight">
           <p className="text-sm font-medium">Register Locator</p>
