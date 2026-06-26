@@ -29,17 +29,12 @@ export function AppShell({
 
   return (
     <div>
-      <header className="relative flex items-center gap-3 px-4 py-3 bg-black border-l-4 border-pos-vermilion flex-wrap">
-        <Image
-          src="/pos360-logo.png"
-          alt="POS360"
-          width={224}
-          height={60}
-          priority
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-        />
-        <div><SerialSearch machines={machines} autoFocus={autoFocusSearch} /></div>
-        <div className="ml-auto flex items-center gap-2">
+      <header className="relative flex items-center justify-between gap-3 px-4 py-3 bg-black border-l-4 border-pos-vermilion">
+        <Image src="/pos360-logo.png" alt="POS360" width={149} height={40} priority />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <SerialSearch machines={machines} autoFocus={autoFocusSearch} />
+        </div>
+        <div className="flex items-center gap-2">
           <button
             onClick={onSerialize}
             className="text-sm font-medium px-3 py-1.5 rounded-md border border-pos-line hover:bg-neutral-900"
