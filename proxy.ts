@@ -21,7 +21,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Gate everything except Next internals and our public assets, so those load on the
-  // unlock screen too. Explicit list (proven Vercel-edge pattern) rather than a broad regex.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|honeycomb-bg.jpg).*)"],
+  // Gate everything except Next internals and public image assets (anchored extension
+  // match, per the Next.js docs pattern), so logo/background load on the unlock screen too.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|ico|webp)$).*)"],
 };
