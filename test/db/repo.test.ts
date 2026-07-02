@@ -128,4 +128,17 @@ describe("repo.serializeBatch", () => {
     expect(events[0]).toMatchObject({ productLine: "360 Smoke", role: "Primary", model: "Matsuda" });
     expect(events[0].serial).toMatch(/^SMKP/);
   });
+
+  it("uses the custom starting number for pre-printed labels", async () => {
+    const created = await repo.serializeBatch(db, { ...args, customStart: "7777" }, 5);
+    expect(created.map((m) => m.serial)).toEqual(["7777", "7778", "7779", "7780", "7781"]);
+    expect(created[0].location).toBe("HH"); // still lands in staging
+    const events = await repo.listSerializationEvents(db);
+    expect(events).toHaveLength(5); // still logged to activity
+  });
+
+  it("rejects a custom range that collides with existing serials", async () => {
+    await repo.checkIn(db, { ...checkInArgs, serial: "7778", slot: 9 });
+    await expect(repo.serializeBatch(db, { ...args, customStart: "7777" }, 3)).rejects.toThrow(/7778/);
+  });
 });

@@ -1,5 +1,21 @@
 import { describe, it, expect } from "vitest";
-import { parseSerialDate, compareByAge, prefixFor, buildSerial } from "@/lib/domain/serial";
+import { parseSerialDate, compareByAge, prefixFor, buildSerial, incrementSerial } from "@/lib/domain/serial";
+
+describe("incrementSerial", () => {
+  it("increments plain numbers", () => {
+    expect(incrementSerial("7777", 0)).toBe("7777");
+    expect(incrementSerial("7777", 4)).toBe("7781");
+  });
+  it("preserves zero-padding and prefixes", () => {
+    expect(incrementSerial("ABC-0100", 1)).toBe("ABC-0101");
+    expect(incrementSerial("0999", 1)).toBe("1000");
+    expect(incrementSerial("SMKP250423001", 2)).toBe("SMKP250423003");
+  });
+  it("returns null when the value doesn't end in digits", () => {
+    expect(incrementSerial("SERIAL-", 1)).toBeNull();
+    expect(incrementSerial("", 1)).toBeNull();
+  });
+});
 
 describe("prefixFor", () => {
   it("maps line + role to prefix", () => {

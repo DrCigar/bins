@@ -6,6 +6,7 @@ import {
   Model, Role, Status, ProductLine,
 } from "@/lib/domain/types";
 import { serializeAction } from "@/app/actions";
+import { incrementSerial } from "@/lib/domain/serial";
 
 const field = "bg-pos-surface2 border border-pos-line rounded-md px-3 py-2 text-sm w-full mt-1 text-white";
 const todayStr = (): string => new Date().toISOString().slice(0, 10);
@@ -33,22 +34,35 @@ export function SerializeDialog({
   const [date, setDate] = useState<string>(todayStr());
   const [quantity, setQuantity] = useState<number>(1);
   const [printStyle, setPrintStyle] = useState<"roll" | "sheet">(d.printStyle ?? "roll");
+  const [prePrinted, setPrePrinted] = useState(false);
+  const [customStart, setCustomStart] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<Array<{ serial: string; location: string; slot: number | null }> | null>(null);
   const [shortfall, setShortfall] = useState(false);
 
+  // Live preview of the custom range, e.g. "7777 … 7781".
+  const rangeEnd = prePrinted && /\d$/.test(customStart.trim())
+    ? incrementSerial(customStart, Math.max(1, quantity) - 1)
+    : null;
+
   function reset() {
     setResult(null); setError(""); setShortfall(false); setQuantity(1);
+    setPrePrinted(false); setCustomStart("");
   }
   function close() { reset(); onClose(); }
 
   async function submit() {
     setError("");
+    if (prePrinted && !/\d$/.test(customStart.trim())) {
+      setError("Enter the starting serial from your pre-printed labels (must end in a number).");
+      return;
+    }
     setBusy(true);
     try {
       const { created } = await serializeAction({
         productLine, role, model, status, assembledBy, notes: null, date, quantity,
+        customStart: prePrinted ? customStart : null,
       });
       if (created.length === 0) {
         setError("Staging racks (HH, II) are full — free up space or lower the quantity.");
@@ -145,12 +159,38 @@ export function SerializeDialog({
             <input type="number" min={1} className={field} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} />
           </label>
         </div>
-        <label className="text-xs text-neutral-400">Print style
-          <select className={field} value={printStyle} onChange={(e) => setPrintStyle(e.target.value as "roll" | "sheet")}>
-            <option value="roll">Thermal roll (2.25&quot; x 1.25&quot;)</option>
-            <option value="sheet">8 x 10 sheet</option>
-          </select>
+        <label className="flex items-center gap-2 text-xs text-neutral-400 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={prePrinted}
+            onChange={(e) => setPrePrinted(e.target.checked)}
+            className="accent-[#ef4023]"
+          />
+          Use pre-printed labels (enter your own starting number)
         </label>
+        {prePrinted && (
+          <label className="text-xs text-neutral-400">Starting serial
+            <input
+              className={field}
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              placeholder="7777"
+            />
+            {rangeEnd && (
+              <span className="block mt-1 text-[11px] text-status-new">
+                Will generate {quantity} serial{quantity > 1 ? "s" : ""}: {customStart.trim()} … {rangeEnd}
+              </span>
+            )}
+          </label>
+        )}
+        {!prePrinted && (
+          <label className="text-xs text-neutral-400">Print style
+            <select className={field} value={printStyle} onChange={(e) => setPrintStyle(e.target.value as "roll" | "sheet")}>
+              <option value="roll">Thermal roll (2.25&quot; x 1.25&quot;)</option>
+              <option value="sheet">8 x 10 sheet</option>
+            </select>
+          </label>
+        )}
       </div>
       {error && <p className="text-status-broken text-xs mt-2">{error}</p>}
       <button
@@ -158,7 +198,7 @@ export function SerializeDialog({
         disabled={busy}
         className="mt-4 w-full bg-pos-vermilion rounded-md py-2 text-sm font-medium disabled:opacity-60"
       >
-        {busy ? "Serializing…" : "Generate & Print"}
+        {busy ? "Serializing…" : prePrinted ? "Serialize batch" : "Generate & Print"}
       </button>
     </Dialog>
   );

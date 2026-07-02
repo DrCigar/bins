@@ -13,6 +13,17 @@ export function buildSerial(prefix: string, date: Date, seq: number): string {
   return `${prefix}${yy}${mm}${dd}${pad3(seq)}`;
 }
 
+// Increment the trailing number of a serial, preserving any prefix and zero-padding.
+// e.g. ("7777", 2) -> "7779"; ("ABC-0100", 1) -> "ABC-0101"; ("0999", 1) -> "1000".
+// Returns null if the value doesn't end in digits.
+export function incrementSerial(start: string, offset: number): string | null {
+  const m = /^(.*?)(\d+)$/.exec(start.trim());
+  if (!m) return null;
+  const [, prefix, digits] = m;
+  const next = String(Number(digits) + offset).padStart(digits.length, "0");
+  return `${prefix}${next}`;
+}
+
 export function parseSerialDate(serial: string | null | undefined): Date | null {
   // Date is the 6 digits immediately before the 3-digit sequence — prefix-length independent.
   if (typeof serial !== "string" || serial.length < 9) return null;

@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { machines, serializationEvents, MachineRow, SerializationEventRow } from "./schema";
 import { Machine, Model, Role, Status, ProductLine, SerializationEvent, OUT, isOpenArea } from "@/lib/domain/types";
-import { prefixFor, buildSerial } from "@/lib/domain/serial";
+import { prefixFor, buildSerial, incrementSerial } from "@/lib/domain/serial";
 import { STAGING_RACKS, rackCapacity } from "@/lib/layout/warehouse";
 
 // Accepts either the Neon-backed or PGlite-backed Drizzle instance.
@@ -116,6 +116,9 @@ export interface SerializeArgs {
   assembledBy: string | null;
   notes: string | null;
   date: Date;
+  // Pre-printed labels: use this literal starting serial and increment its trailing
+  // number per unit, instead of the prefix+date+counter scheme.
+  customStart?: string;
 }
 
 // Generate `quantity` sequential serials and place the units into staging racks (in order).
@@ -130,13 +133,26 @@ export async function serializeBatch(db: AnyDb, args: SerializeArgs, quantity: n
   const n = Math.min(quantity, open.length);
   if (n === 0) return [];
 
-  const prefix = prefixFor(args.productLine, args.role);
-  const dateKey = buildSerial(prefix, args.date, 0).slice(prefix.length, prefix.length + 6); // YYMMDD
-  const high = await allocateSequence(db, `${prefix}${dateKey}`, n);
-  const startSeq = high - n + 1;
+  let serialFor: (i: number) => string;
+  if (args.customStart) {
+    const serials = Array.from({ length: n }, (_, i) => incrementSerial(args.customStart!, i));
+    if (serials.some((x) => x === null)) throw new Error("Starting serial must end in a number.");
+    const wanted = serials as string[];
+    // Fail up front (naming conflicts) rather than half-inserting into the unique column.
+    const taken = new Set(existing.map((m) => m.serial).filter(Boolean) as string[]);
+    const conflicts = wanted.filter((x) => taken.has(x));
+    if (conflicts.length > 0) throw new Error(`Already in the system: ${conflicts.join(", ")}`);
+    serialFor = (i) => wanted[i];
+  } else {
+    const prefix = prefixFor(args.productLine, args.role);
+    const dateKey = buildSerial(prefix, args.date, 0).slice(prefix.length, prefix.length + 6); // YYMMDD
+    const high = await allocateSequence(db, `${prefix}${dateKey}`, n);
+    const startSeq = high - n + 1;
+    serialFor = (i) => buildSerial(prefix, args.date, startSeq + i);
+  }
 
   const values = Array.from({ length: n }, (_, i) => ({
-    serial: buildSerial(prefix, args.date, startSeq + i),
+    serial: serialFor(i),
     model: args.model,
     role: args.role,
     status: args.status,

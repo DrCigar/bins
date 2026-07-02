@@ -66,7 +66,12 @@ export async function serializeAction(input: {
   notes: string | null;
   date: string; // YYYY-MM-DD
   quantity: number;
+  customStart?: string | null; // pre-printed labels: literal starting serial
 }): Promise<{ created: Array<{ serial: string; location: string; slot: number | null }> }> {
+  const customStart = input.customStart?.trim() || undefined;
+  if (customStart && !/\d$/.test(customStart)) {
+    throw new Error("Starting serial must end in a number.");
+  }
   const created = await repo.serializeBatch(await getReadyDb(), {
     productLine: assertEnum(PRODUCT_LINES, input.productLine, "product line") as ProductLine,
     role: assertEnum(ROLES, input.role, "role") as Role,
@@ -75,6 +80,7 @@ export async function serializeAction(input: {
     assembledBy: input.assembledBy?.trim() || null,
     notes: input.notes?.trim() || null,
     date: new Date(input.date + "T00:00:00Z"),
+    customStart,
   }, Math.max(1, Math.floor(input.quantity)));
   revalidatePath("/");
   revalidatePath("/totals");
