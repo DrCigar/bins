@@ -60,7 +60,12 @@ export const update = (
   fields: Partial<Pick<MachineRow, "serial" | "model" | "role" | "status" | "productLine" | "assembledBy" | "notes">>,
 ) => patch(db, id, fields);
 
+// Delete a machine. If it was serialized, also drop its build-activity event so the
+// Activity report doesn't count units that were serialized in error.
 export const remove = async (db: AnyDb, id: number): Promise<void> => {
+  const rows = await db.select().from(machines).where(eq(machines.id, id));
+  const serial = rows[0]?.serial;
+  if (serial) await db.delete(serializationEvents).where(eq(serializationEvents.serial, serial));
   await db.delete(machines).where(eq(machines.id, id));
 };
 

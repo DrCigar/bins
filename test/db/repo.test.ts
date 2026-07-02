@@ -141,4 +141,13 @@ describe("repo.serializeBatch", () => {
     await repo.checkIn(db, { ...checkInArgs, serial: "7778", slot: 9 });
     await expect(repo.serializeBatch(db, { ...args, customStart: "7777" }, 3)).rejects.toThrow(/7778/);
   });
+
+  it("removing a serialized unit also clears its activity event", async () => {
+    const created = await repo.serializeBatch(db, args, 3);
+    await repo.remove(db, created[0].id);
+    expect(await repo.list(db)).toHaveLength(2);
+    const events = await repo.listSerializationEvents(db);
+    expect(events).toHaveLength(2);
+    expect(events.map((e) => e.serial)).not.toContain(created[0].serial);
+  });
 });

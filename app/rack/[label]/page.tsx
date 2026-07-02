@@ -27,6 +27,7 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
   const [moveLoc, setMoveLoc] = useState("");
   const [moveSlot, setMoveSlot] = useState<number | "">("");
   const [error, setError] = useState("");
+  const [confirmDel, setConfirmDel] = useState(false);
   const [serialize, setSerialize] = useState(false);
   const [checkIn, setCheckIn] = useState(false);
   const [checkOut, setCheckOut] = useState(false);
@@ -61,6 +62,7 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
 
   function openSlot(slot: number | null, machine: Machine | null) {
     setError("");
+    setConfirmDel(false);
     setEdit({ slot, machine });
     setMoveLoc(""); setMoveSlot("");
     setForm(
@@ -116,6 +118,7 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
   async function doRemove() {
     if (!edit?.machine) return;
     await removeAction(edit.machine.id);
+    setConfirmDel(false);
     setEdit(null);
     mutate();
   }
@@ -188,12 +191,30 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
               Reprint
             </button>
           )}
-          {edit?.machine && (
-            <button onClick={doRemove} className="px-3 rounded-md border border-pos-line text-sm hover:bg-neutral-900">
-              Remove
+          {edit?.machine && !confirmDel && (
+            <button
+              onClick={() => setConfirmDel(true)}
+              aria-label="Delete register"
+              title="Delete register"
+              className="px-3 rounded-md border border-status-broken/60 text-status-broken hover:bg-status-broken/10 flex items-center"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6m3 5v6m4-6v6" />
+              </svg>
             </button>
           )}
+          {edit?.machine && confirmDel && (
+            <div className="flex items-center gap-1">
+              <button onClick={doRemove} className="px-3 rounded-md bg-status-broken text-white text-sm font-medium">
+                Delete
+              </button>
+              <button onClick={() => setConfirmDel(false)} className="px-3 rounded-md border border-pos-line text-sm hover:bg-neutral-900">
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
+        {confirmDel && <p className="text-status-broken text-xs mt-2">Delete this register permanently? This can&apos;t be undone.</p>}
 
         {edit?.machine && (
           <div className="mt-4 pt-3 border-t border-pos-line">
