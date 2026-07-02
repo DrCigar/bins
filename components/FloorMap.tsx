@@ -71,8 +71,12 @@ export function FloorMap({
 
       {RACKS.map((r) => {
         const cap = rackCapacity(r.label);
-        const fill = cap ? countAt(r.label) / cap : 0;
+        const fill = cap ? Math.min(1, countAt(r.label) / cap) : 0;
         const silver = r.material === "silver";
+        const vertical = r.h >= r.w; // fill bottom-up for tall racks, left-to-right for wide ones
+        const barStyle = vertical
+          ? { left: 0, right: 0, bottom: 0, height: `${fill * 100}%` }
+          : { left: 0, top: 0, bottom: 0, width: `${fill * 100}%` };
         return (
           <button
             key={r.label}
@@ -89,7 +93,7 @@ export function FloorMap({
               borderColor: silver ? "#b9bec8" : "rgba(255,255,255,0.25)",
             }}
           >
-            <span className="absolute inset-0" style={{ background: `rgba(239,64,35,${fill})` }} />
+            <span className="absolute" style={{ ...barStyle, background: "#ef4023" }} />
             <span className="relative text-[11px] font-medium text-white" style={{ textShadow: "0 1px 2px rgba(0,0,0,0.7)" }}>{r.label}</span>
           </button>
         );
