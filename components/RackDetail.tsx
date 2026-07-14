@@ -76,7 +76,9 @@ export function RackDetail({
 
   const capacity = rackCapacity(label);
   const cols = rackCols(label);
-  const bySlot = new Map(here.map((m) => [m.slot, m]));
+  const inGrid = (m: Machine) => m.slot != null && m.slot >= 1 && m.slot <= capacity;
+  const bySlot = new Map(here.filter(inGrid).map((m) => [m.slot, m]));
+  const offGrid = here.filter((m) => !inGrid(m)); // stray units with no/invalid slot
   const slots = Array.from({ length: capacity }, (_, i) => i + 1);
 
   return (
@@ -103,6 +105,19 @@ export function RackDetail({
           );
         })}
       </div>
+
+      {offGrid.length > 0 && (
+        <div className="mt-4">
+          <p className="text-xs text-status-used mb-2">
+            ⚠ {offGrid.length} unit{offGrid.length > 1 ? "s" : ""} in this rack with no assigned slot — open to move or delete.
+          </p>
+          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(cols, 5)}, minmax(0, 1fr))`, maxWidth: cols <= 2 ? 260 : undefined }}>
+            {offGrid.map((m) => (
+              <FilledCard key={m.id} label="no slot" m={m} selected={isSel(m)} onClick={() => cardClick(m, m.slot ?? null)} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

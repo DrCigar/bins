@@ -113,8 +113,9 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
   async function doMove() {
     if (!edit?.machine || !moveLoc) return;
     setError("");
+    if (!isOpenArea(moveLoc) && moveSlot === "") { setError("Pick a slot in the destination rack."); return; }
     try {
-      await moveAction(edit.machine.id, moveLoc, isOpenArea(moveLoc) ? null : (moveSlot === "" ? null : Number(moveSlot)));
+      await moveAction(edit.machine.id, moveLoc, isOpenArea(moveLoc) ? null : Number(moveSlot));
       setEdit(null);
       mutate();
     } catch (e) {
