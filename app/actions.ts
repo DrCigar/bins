@@ -67,28 +67,37 @@ export async function serializeAction(input: {
   date: string; // YYYY-MM-DD
   quantity: number;
   customStart?: string | null; // pre-printed labels: literal starting serial
-}): Promise<{ created: Array<{ serial: string; location: string; slot: number | null }> }> {
-  const customStart = input.customStart?.trim() || undefined;
-  if (customStart && !/\d$/.test(customStart)) {
-    throw new Error("Starting serial must end in a number.");
+}): Promise<
+  | { created: Array<{ serial: string; location: string; slot: number | null }> }
+  | { error: string }
+> {
+  try {
+    const customStart = input.customStart?.trim() || undefined;
+    if (customStart && !/\d$/.test(customStart)) {
+      return { error: "Starting serial must end in a number." };
+    }
+    const created = await repo.serializeBatch(await getReadyDb(), {
+      productLine: assertEnum(PRODUCT_LINES, input.productLine, "product line") as ProductLine,
+      role: assertEnum(ROLES, input.role, "role") as Role,
+      model: assertEnum(MODELS, input.model, "model") as Model,
+      status: assertEnum(STATUSES, input.status, "status") as Status,
+      assembledBy: input.assembledBy?.trim() || null,
+      notes: input.notes?.trim() || null,
+      date: new Date(input.date + "T00:00:00Z"),
+      customStart,
+    }, Math.max(1, Math.floor(input.quantity)));
+    revalidatePath("/");
+    revalidatePath("/totals");
+    return {
+      created: created
+        .filter((m): m is typeof m & { serial: string } => Boolean(m.serial))
+        .map((m) => ({ serial: m.serial, location: m.location, slot: m.slot })),
+    };
+  } catch (e) {
+    // Surface the real reason to the client (prod otherwise masks it behind a digest).
+    console.error("serializeAction failed:", e);
+    return { error: e instanceof Error ? e.message : "Serialize failed" };
   }
-  const created = await repo.serializeBatch(await getReadyDb(), {
-    productLine: assertEnum(PRODUCT_LINES, input.productLine, "product line") as ProductLine,
-    role: assertEnum(ROLES, input.role, "role") as Role,
-    model: assertEnum(MODELS, input.model, "model") as Model,
-    status: assertEnum(STATUSES, input.status, "status") as Status,
-    assembledBy: input.assembledBy?.trim() || null,
-    notes: input.notes?.trim() || null,
-    date: new Date(input.date + "T00:00:00Z"),
-    customStart,
-  }, Math.max(1, Math.floor(input.quantity)));
-  revalidatePath("/");
-  revalidatePath("/totals");
-  return {
-    created: created
-      .filter((m): m is typeof m & { serial: string } => Boolean(m.serial))
-      .map((m) => ({ serial: m.serial, location: m.location, slot: m.slot })),
-  };
 }
 
 export async function updateMachineAction(

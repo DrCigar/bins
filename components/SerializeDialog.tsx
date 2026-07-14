@@ -60,10 +60,15 @@ export function SerializeDialog({
     }
     setBusy(true);
     try {
-      const { created } = await serializeAction({
+      const res = await serializeAction({
         productLine, role, model, status, assembledBy, notes: null, date, quantity,
         customStart: prePrinted ? customStart : null,
       });
+      if ("error" in res) {
+        setError(res.error);
+        return;
+      }
+      const { created } = res;
       if (created.length === 0) {
         setError("Staging racks (HH, II) are full — free up space or lower the quantity.");
         return;
