@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { machines, serializationEvents, MachineRow, SerializationEventRow } from "./schema";
 import { Machine, Model, Role, Status, ProductLine, SerializationEvent, OUT, isOpenArea } from "@/lib/domain/types";
 import { prefixFor, buildSerial, incrementSerial } from "@/lib/domain/serial";
-import { STAGING_RACKS, rackCapacity } from "@/lib/layout/warehouse";
+import { rackCapacity, areaCapacity } from "@/lib/layout/warehouse";
 
 // Accepts either the Neon-backed or PGlite-backed Drizzle instance.
 type AnyDb = any;
@@ -121,19 +121,27 @@ export interface SerializeArgs {
   assembledBy: string | null;
   notes: string | null;
   date: Date;
+  // Where the batch lands — a rack label (A, HH, …) or an open area (Inbound/Pre-Deployment/Outbound).
+  destination: string;
   // Pre-printed labels: use this literal starting serial and increment its trailing
   // number per unit, instead of the prefix+date+counter scheme.
   customStart?: string;
 }
 
-// Generate `quantity` sequential serials and place the units into staging racks (in order).
-// Caps at the number of open staging slots.
+// Generate `quantity` sequential serials and place the units into the chosen destination,
+// filling its open slots in order. Caps at the destination's available room.
 export async function serializeBatch(db: AnyDb, args: SerializeArgs, quantity: number): Promise<Machine[]> {
   const existing = await list(db);
-  const open: Array<{ location: string; slot: number }> = [];
-  for (const rack of STAGING_RACKS) {
-    const taken = new Set(existing.filter((m) => m.location === rack).map((m) => m.slot));
-    for (let s = 1; s <= rackCapacity(rack); s++) if (!taken.has(s)) open.push({ location: rack, slot: s });
+  const dest = args.destination;
+  const open: Array<{ location: string; slot: number | null }> = [];
+  if (isOpenArea(dest)) {
+    const cap = areaCapacity(dest); // null = unlimited
+    const current = existing.filter((m) => m.location === dest).length;
+    const room = cap === null ? quantity : Math.max(0, cap - current);
+    for (let i = 0; i < room; i++) open.push({ location: dest, slot: null });
+  } else {
+    const taken = new Set(existing.filter((m) => m.location === dest).map((m) => m.slot));
+    for (let s = 1; s <= rackCapacity(dest); s++) if (!taken.has(s)) open.push({ location: dest, slot: s });
   }
   const n = Math.min(quantity, open.length);
   if (n === 0) return [];

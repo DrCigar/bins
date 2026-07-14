@@ -3,8 +3,10 @@ import { useState } from "react";
 import { Dialog } from "./Dialog";
 import {
   MODELS, ROLES, STATUSES, PRODUCT_LINES, ASSEMBLERS,
+  INBOUND, PRE_DEPLOYMENT, OUTBOUND,
   Model, Role, Status, ProductLine,
 } from "@/lib/domain/types";
+import { RACKS, STAGING_RACKS } from "@/lib/layout/warehouse";
 import { serializeAction } from "@/app/actions";
 import { incrementSerial } from "@/lib/domain/serial";
 
@@ -33,6 +35,7 @@ export function SerializeDialog({
   const [assembledBy, setAssembledBy] = useState<string>(d.assembledBy ?? ASSEMBLERS[0]);
   const [date, setDate] = useState<string>(todayStr());
   const [quantity, setQuantity] = useState<number>(1);
+  const [destination, setDestination] = useState<string>(STAGING_RACKS[0] ?? "HH");
   const [printStyle, setPrintStyle] = useState<"roll" | "sheet">(d.printStyle ?? "roll");
   const [prePrinted, setPrePrinted] = useState(false);
   const [customStart, setCustomStart] = useState("");
@@ -62,6 +65,7 @@ export function SerializeDialog({
     try {
       const res = await serializeAction({
         productLine, role, model, status, assembledBy, notes: null, date, quantity,
+        destination,
         customStart: prePrinted ? customStart : null,
       });
       if ("error" in res) {
@@ -70,7 +74,7 @@ export function SerializeDialog({
       }
       const { created } = res;
       if (created.length === 0) {
-        setError("Staging racks (HH, II) are full — free up space or lower the quantity.");
+        setError(`${destination} is full — pick another destination or lower the quantity.`);
         return;
       }
       try {
@@ -94,7 +98,6 @@ export function SerializeDialog({
   }
 
   if (result) {
-    const stagedAt = result.map((r) => `${r.location}-${String(r.slot ?? "").padStart(2, "0")}`).join(", ");
     return (
       <Dialog open={open} title="Serialized" onClose={close}>
         <div className="flex flex-col gap-3">
@@ -103,11 +106,11 @@ export function SerializeDialog({
               ✓ {result.length} register{result.length > 1 ? "s" : ""} serialized
             </p>
             <p className="text-xs text-neutral-300 mt-1">
-              Automatically placed in the Staging area: <span className="font-medium">{stagedAt}</span>
+              Placed in <span className="font-medium">{destination}</span>
             </p>
           </div>
           {shortfall && (
-            <p className="text-status-used text-xs">Staging filled up — only {result.length} of the batch fit. Move some out, then serialize the rest.</p>
+            <p className="text-status-used text-xs">{destination} filled up — only {result.length} of the batch fit. Pick another destination for the rest.</p>
           )}
           <div className="text-[11px] text-neutral-500 max-h-24 overflow-auto">
             {result.map((r) => <div key={r.serial}>{r.serial}</div>)}
@@ -154,6 +157,18 @@ export function SerializeDialog({
         <label className="text-xs text-neutral-400">Assembled by
           <select className={field} value={assembledBy} onChange={(e) => setAssembledBy(e.target.value)}>
             {ASSEMBLERS.map((x) => <option key={x}>{x}</option>)}
+          </select>
+        </label>
+        <label className="text-xs text-neutral-400">Destination
+          <select className={field} value={destination} onChange={(e) => setDestination(e.target.value)}>
+            {RACKS.map((r) => (
+              <option key={r.label} value={r.label}>
+                Rack {r.label}{STAGING_RACKS.includes(r.label) ? " (staging)" : ""}
+              </option>
+            ))}
+            <option value={INBOUND}>{INBOUND}</option>
+            <option value={PRE_DEPLOYMENT}>{PRE_DEPLOYMENT}</option>
+            <option value={OUTBOUND}>{OUTBOUND}</option>
           </select>
         </label>
         <div className="grid grid-cols-2 gap-3">

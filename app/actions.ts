@@ -66,6 +66,7 @@ export async function serializeAction(input: {
   notes: string | null;
   date: string; // YYYY-MM-DD
   quantity: number;
+  destination: string; // rack label or open area where the batch lands
   customStart?: string | null; // pre-printed labels: literal starting serial
 }): Promise<
   | { created: Array<{ serial: string; location: string; slot: number | null }> }
@@ -84,6 +85,7 @@ export async function serializeAction(input: {
       assembledBy: input.assembledBy?.trim() || null,
       notes: input.notes?.trim() || null,
       date: new Date(input.date + "T00:00:00Z"),
+      destination: input.destination,
       customStart,
     }, Math.max(1, Math.floor(input.quantity)));
     revalidatePath("/");

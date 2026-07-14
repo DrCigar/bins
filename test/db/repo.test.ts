@@ -109,17 +109,27 @@ describe("repo.serializeBatch", () => {
     productLine: "360 Smoke" as const, role: "Primary" as const,
     model: "Matsuda" as const, status: "New" as const,
     assembledBy: "Thang", notes: null, date: new Date(Date.UTC(2025, 3, 23)),
+    destination: "HH",
   };
-  it("creates N units with sequential serials placed into staging racks", async () => {
+  it("creates N units with sequential serials in the chosen destination rack", async () => {
     const created = await repo.serializeBatch(db, args, 3);
     expect(created.map((m) => m.serial)).toEqual(["SMKP250423001", "SMKP250423002", "SMKP250423003"]);
-    expect(created.every((m) => ["HH", "II"].includes(m.location))).toBe(true);
-    expect(created[0].location).toBe("HH");
+    expect(created.every((m) => m.location === "HH")).toBe(true);
     expect(created[0].slot).toBe(1);
   });
-  it("caps the batch at available staging slots (HH + II = 16 + 16)", async () => {
+  it("places into any chosen rack, filling its slots", async () => {
+    const created = await repo.serializeBatch(db, { ...args, destination: "M" }, 2);
+    expect(created.every((m) => m.location === "M")).toBe(true);
+    expect(created.map((m) => m.slot)).toEqual([1, 2]);
+  });
+  it("caps a rack batch at its capacity (HH = 16)", async () => {
     const res = await repo.serializeBatch(db, args, 999);
-    expect(res.length).toBe(32);
+    expect(res.length).toBe(16);
+  });
+  it("places into an open area with null slots, capped by area capacity", async () => {
+    const res = await repo.serializeBatch(db, { ...args, destination: "Pre-Deployment" }, 999);
+    expect(res.length).toBe(30); // Pre-Deployment cap
+    expect(res.every((m) => m.location === "Pre-Deployment" && m.slot === null)).toBe(true);
   });
   it("logs an event per serialized unit", async () => {
     await repo.serializeBatch(db, args, 3);
