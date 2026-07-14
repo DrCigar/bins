@@ -139,6 +139,13 @@ export async function moveManyAction(ids: number[], location: string): Promise<{
   return { moved: movedIds.length };
 }
 
+export async function clearAreaAction(location: string): Promise<{ cleared: number }> {
+  const cleared = await repo.clearLocation(await getReadyDb(), location);
+  revalidatePath("/");
+  revalidatePath("/totals");
+  return { cleared };
+}
+
 export async function removeAction(id: number) {
   await repo.remove(await getReadyDb(), id);
   revalidatePath("/");

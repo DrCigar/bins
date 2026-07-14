@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, inArray } from "drizzle-orm";
 import { machines, serializationEvents, MachineRow, SerializationEventRow } from "./schema";
 import { Machine, Model, Role, Status, ProductLine, SerializationEvent, OUT, isOpenArea } from "@/lib/domain/types";
 import { prefixFor, buildSerial, incrementSerial } from "@/lib/domain/serial";
@@ -100,6 +100,16 @@ export async function moveMany(db: AnyDb, ids: number[], location: string): Prom
     await patch(db, t.id, { location, slot: t.slot, destination: null, checkedOutAt: null });
   }
   return targets.map((t) => t.id);
+}
+
+// Empty an area: delete every machine in `location` (and their activity events). Returns count removed.
+export async function clearLocation(db: AnyDb, location: string): Promise<number> {
+  const here = (await list(db)).filter((m) => m.location === location);
+  if (here.length === 0) return 0;
+  const serials = here.map((m) => m.serial).filter((s): s is string => Boolean(s));
+  if (serials.length) await db.delete(serializationEvents).where(inArray(serializationEvents.serial, serials));
+  await db.delete(machines).where(eq(machines.location, location));
+  return here.length;
 }
 
 // Atomic per-key counter; returns the new high-water mark after adding `count`.

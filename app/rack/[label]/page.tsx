@@ -10,7 +10,7 @@ import { CheckInDialog } from "@/components/CheckInDialog";
 import { CheckOutDialog } from "@/components/CheckOutDialog";
 import { SerializeDialog } from "@/components/SerializeDialog";
 import { fetcher } from "@/lib/fetcher";
-import { updateMachineAction, removeAction, checkInAction, moveAction, moveManyAction } from "@/app/actions";
+import { updateMachineAction, removeAction, checkInAction, moveAction, moveManyAction, clearAreaAction } from "@/app/actions";
 import { RACKS, rackCapacity } from "@/lib/layout/warehouse";
 import { Machine, PRE_DEPLOYMENT, OUTBOUND, INBOUND, isOpenArea } from "@/lib/domain/types";
 
@@ -34,6 +34,7 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkDest, setBulkDest] = useState("");
+  const [confirmClear, setConfirmClear] = useState(false);
   const router = useRouter();
 
   const toggleSelect = (id: number) =>
@@ -45,6 +46,12 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
 
   function exitSelect() {
     setSelectMode(false); setSelectedIds(new Set()); setBulkDest(""); setError("");
+  }
+
+  async function doClearArea() {
+    await clearAreaAction(decoded);
+    setConfirmClear(false);
+    mutate();
   }
 
   async function doMoveMany() {
@@ -139,15 +146,30 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
         <button onClick={() => router.push("/")} className="text-xs text-neutral-400 hover:text-white">
           ← Back to map
         </button>
-        {machines.some((m) => m.location === decoded) && (
-          selectMode ? (
-            <button onClick={exitSelect} className="text-xs text-neutral-400 hover:text-white ml-auto">Cancel</button>
-          ) : (
-            <button onClick={() => setSelectMode(true)} className="text-xs text-pos-vermilion hover:underline ml-auto">
-              Move multiple
-            </button>
-          )
-        )}
+        <div className="ml-auto flex items-center gap-3">
+          {(decoded === OUTBOUND || decoded === PRE_DEPLOYMENT) && machines.some((m) => m.location === decoded) && !selectMode && (
+            confirmClear ? (
+              <span className="flex items-center gap-2 text-xs">
+                <span className="text-status-broken">Empty {decoded} ({machines.filter((m) => m.location === decoded).length})?</span>
+                <button onClick={doClearArea} className="px-2 py-0.5 rounded bg-status-broken text-white">Clear</button>
+                <button onClick={() => setConfirmClear(false)} className="px-2 py-0.5 rounded border border-pos-line hover:bg-neutral-900">Cancel</button>
+              </span>
+            ) : (
+              <button onClick={() => setConfirmClear(true)} className="text-xs text-status-broken hover:underline">
+                Clear {decoded}
+              </button>
+            )
+          )}
+          {machines.some((m) => m.location === decoded) && (
+            selectMode ? (
+              <button onClick={exitSelect} className="text-xs text-neutral-400 hover:text-white">Cancel</button>
+            ) : (
+              <button onClick={() => setSelectMode(true)} className="text-xs text-pos-vermilion hover:underline">
+                Move multiple
+              </button>
+            )
+          )}
+        </div>
       </div>
 
       {selectMode && (

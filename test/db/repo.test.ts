@@ -152,6 +152,16 @@ describe("repo.serializeBatch", () => {
     await expect(repo.serializeBatch(db, { ...args, customStart: "7777" }, 3)).rejects.toThrow(/7778/);
   });
 
+  it("clearLocation empties an area and drops its activity events", async () => {
+    await repo.serializeBatch(db, { ...args, destination: "Pre-Deployment" }, 4);
+    await repo.checkIn(db, { ...checkInArgs, location: "A", slot: 1 }); // keep an unrelated unit
+    const cleared = await repo.clearLocation(db, "Pre-Deployment");
+    expect(cleared).toBe(4);
+    expect((await repo.list(db)).every((m) => m.location !== "Pre-Deployment")).toBe(true);
+    expect(await repo.listSerializationEvents(db)).toHaveLength(0);
+    expect(await repo.list(db)).toHaveLength(1); // the unrelated unit survives
+  });
+
   it("removing a serialized unit also clears its activity event", async () => {
     const created = await repo.serializeBatch(db, args, 3);
     await repo.remove(db, created[0].id);
