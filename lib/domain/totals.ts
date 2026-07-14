@@ -1,4 +1,4 @@
-import { Machine, MODELS, ROLES, PRODUCT_LINES, Model, Role, ProductLine, OUT } from "./types";
+import { Machine, MODELS, ROLES, STATUSES, PRODUCT_LINES, Model, Role, Status, ProductLine, OUT } from "./types";
 
 export interface TotalsRow {
   model: Model;
@@ -81,4 +81,27 @@ export function computeLineTotals(machines: Machine[]): LineTotals {
     return acc;
   }, {} as Record<Model, number>);
   return { rows, grand, byModel };
+}
+
+export interface ModelCell { primary: number; secondary: number; total: number }
+export interface StatusSection { byModel: Record<Model, ModelCell>; total: number }
+export type StatusBreakdown = Record<Status, StatusSection>;
+
+// For each status (New/Used/Broken): per-model Primary/Secondary counts. On-hand only.
+export function computeStatusBreakdown(machines: Machine[]): StatusBreakdown {
+  const onHand = machines.filter((x) => x.location !== OUT);
+  const out = {} as StatusBreakdown;
+  for (const status of STATUSES) {
+    const byModel = {} as Record<Model, ModelCell>;
+    let total = 0;
+    for (const model of MODELS) {
+      const subset = onHand.filter((x) => x.status === status && x.model === model);
+      const primary = subset.filter((x) => x.role === "Primary").length;
+      const secondary = subset.filter((x) => x.role === "Secondary").length;
+      byModel[model] = { primary, secondary, total: subset.length };
+      total += subset.length;
+    }
+    out[status] = { byModel, total };
+  }
+  return out;
 }

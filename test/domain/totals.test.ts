@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeTotals, computeLineTotals } from "@/lib/domain/totals";
+import { computeTotals, computeLineTotals, computeStatusBreakdown } from "@/lib/domain/totals";
 import type { Machine } from "@/lib/domain/types";
 
 const m = (over: Partial<Machine>): Machine => ({
@@ -29,6 +29,22 @@ describe("computeTotals", () => {
     const t = computeTotals([]);
     expect(t.rows).toHaveLength(6);
     expect(t.grand.total).toBe(0);
+  });
+});
+
+describe("computeStatusBreakdown", () => {
+  it("splits each status by model and role, excluding Out", () => {
+    const list = [
+      m({ status: "New", model: "Matsuda", role: "Primary" }),
+      m({ status: "New", model: "Matsuda", role: "Secondary" }),
+      m({ status: "Used", model: "Hanasis", role: "Primary" }),
+      m({ status: "New", model: "Matsuda", role: "Primary", location: "Out" }), // excluded
+    ];
+    const b = computeStatusBreakdown(list);
+    expect(b.New.byModel.Matsuda).toMatchObject({ primary: 1, secondary: 1, total: 2 });
+    expect(b.New.total).toBe(2);
+    expect(b.Used.byModel.Hanasis).toMatchObject({ primary: 1, secondary: 0, total: 1 });
+    expect(b.Broken.total).toBe(0);
   });
 });
 
