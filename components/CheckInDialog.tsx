@@ -34,12 +34,13 @@ export function CheckInDialog({
     if (!isOpenArea(location) && slot === "") { setError("Pick a slot"); return; }
     setBusy(true);
     try {
-      await checkInAction({
+      const res = await checkInAction({
         serial: v.serial || null, model: v.model, role: v.role, status: v.status,
         productLine: v.productLine, assembledBy: v.assembledBy || null,
         notes: v.notes || null, location,
         slot: isOpenArea(location) ? null : Number(slot),
       });
+      if ("error" in res) { setError(res.error); return; }
       setV(emptyForm); setSlot(""); onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Check in failed (duplicate serial or slot taken?)");

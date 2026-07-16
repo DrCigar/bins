@@ -12,6 +12,19 @@ const assertEnum = <T extends readonly string[]>(set: T, v: string, name: string
   return v as T[number];
 };
 
+// Turn raw DB/errors into a message the associate can act on (prod otherwise masks these).
+function friendlyError(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e);
+  if (/machines_serial_unique/i.test(msg) || (/serial/i.test(msg) && /unique|duplicate/i.test(msg))) {
+    return "That serial number is already in the system.";
+  }
+  if (/machines_location_slot_unique/i.test(msg) || (/slot/i.test(msg) && /unique|duplicate/i.test(msg))) {
+    return "That slot is already taken.";
+  }
+  console.error("action failed:", e);
+  return msg;
+}
+
 // Throws if `location` is a capped open area that is already full.
 async function assertAreaHasRoom(db: Awaited<ReturnType<typeof getReadyDb>>, location: string): Promise<void> {
   const cap = areaCapacity(location);
@@ -39,22 +52,27 @@ export async function checkInAction(input: {
   notes: string | null;
   location: string;
   slot: number | null;
-}) {
-  const db = await getReadyDb();
-  await assertAreaHasRoom(db, input.location);
-  await repo.checkIn(db, {
-    serial: input.serial?.trim() || null,
-    model: assertEnum(MODELS, input.model, "model") as Model,
-    role: assertEnum(ROLES, input.role, "role") as Role,
-    status: assertEnum(STATUSES, input.status, "status") as Status,
-    productLine: input.productLine ? (assertEnum(PRODUCT_LINES, input.productLine, "product line") as ProductLine) : null,
-    assembledBy: input.assembledBy?.trim() || null,
-    notes: input.notes?.trim() || null,
-    location: input.location,
-    slot: input.slot,
-  });
-  revalidatePath("/");
-  revalidatePath("/totals");
+}): Promise<{ ok: true } | { error: string }> {
+  try {
+    const db = await getReadyDb();
+    await assertAreaHasRoom(db, input.location);
+    await repo.checkIn(db, {
+      serial: input.serial?.trim() || null,
+      model: assertEnum(MODELS, input.model, "model") as Model,
+      role: assertEnum(ROLES, input.role, "role") as Role,
+      status: assertEnum(STATUSES, input.status, "status") as Status,
+      productLine: input.productLine ? (assertEnum(PRODUCT_LINES, input.productLine, "product line") as ProductLine) : null,
+      assembledBy: input.assembledBy?.trim() || null,
+      notes: input.notes?.trim() || null,
+      location: input.location,
+      slot: input.slot,
+    });
+    revalidatePath("/");
+    revalidatePath("/totals");
+    return { ok: true };
+  } catch (e) {
+    return { error: friendlyError(e) };
+  }
 }
 
 export async function serializeAction(input: {
@@ -105,25 +123,35 @@ export async function serializeAction(input: {
 export async function updateMachineAction(
   id: number,
   fields: { serial?: string | null; model?: string; role?: string; status?: string; productLine?: string; assembledBy?: string | null; notes?: string | null },
-) {
-  await repo.update(await getReadyDb(), id, {
-    ...(fields.serial !== undefined ? { serial: fields.serial?.trim() || null } : {}),
-    ...(fields.model ? { model: assertEnum(MODELS, fields.model, "model") } : {}),
-    ...(fields.role ? { role: assertEnum(ROLES, fields.role, "role") } : {}),
-    ...(fields.status ? { status: assertEnum(STATUSES, fields.status, "status") } : {}),
-    ...(fields.productLine ? { productLine: assertEnum(PRODUCT_LINES, fields.productLine, "product line") } : {}),
-    ...(fields.assembledBy !== undefined ? { assembledBy: fields.assembledBy?.trim() || null } : {}),
-    ...(fields.notes !== undefined ? { notes: fields.notes?.trim() || null } : {}),
-  });
-  revalidatePath("/");
-  revalidatePath("/totals");
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    await repo.update(await getReadyDb(), id, {
+      ...(fields.serial !== undefined ? { serial: fields.serial?.trim() || null } : {}),
+      ...(fields.model ? { model: assertEnum(MODELS, fields.model, "model") } : {}),
+      ...(fields.role ? { role: assertEnum(ROLES, fields.role, "role") } : {}),
+      ...(fields.status ? { status: assertEnum(STATUSES, fields.status, "status") } : {}),
+      ...(fields.productLine ? { productLine: assertEnum(PRODUCT_LINES, fields.productLine, "product line") } : {}),
+      ...(fields.assembledBy !== undefined ? { assembledBy: fields.assembledBy?.trim() || null } : {}),
+      ...(fields.notes !== undefined ? { notes: fields.notes?.trim() || null } : {}),
+    });
+    revalidatePath("/");
+    revalidatePath("/totals");
+    return { ok: true };
+  } catch (e) {
+    return { error: friendlyError(e) };
+  }
 }
 
-export async function moveAction(id: number, location: string, slot: number | null) {
-  const db = await getReadyDb();
-  await assertAreaHasRoom(db, location);
-  await repo.move(db, id, { location, slot });
-  revalidatePath("/");
+export async function moveAction(id: number, location: string, slot: number | null): Promise<{ ok: true } | { error: string }> {
+  try {
+    const db = await getReadyDb();
+    await assertAreaHasRoom(db, location);
+    await repo.move(db, id, { location, slot });
+    revalidatePath("/");
+    return { ok: true };
+  } catch (e) {
+    return { error: friendlyError(e) };
+  }
 }
 
 export async function moveManyAction(ids: number[], location: string): Promise<{ moved: number }> {

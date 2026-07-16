@@ -90,37 +90,29 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
   async function save() {
     if (!edit) return;
     setError("");
-    try {
-      if (edit.machine) {
-        await updateMachineAction(edit.machine.id, {
+    const res = edit.machine
+      ? await updateMachineAction(edit.machine.id, {
           serial: form.serial || null, model: form.model, role: form.role, status: form.status,
           productLine: form.productLine, assembledBy: form.assembledBy || null, notes: form.notes || null,
-        });
-      } else {
-        await checkInAction({
+        })
+      : await checkInAction({
           serial: form.serial, model: form.model, role: form.role, status: form.status,
           productLine: form.productLine, assembledBy: form.assembledBy || null,
           notes: form.notes || null, location: decoded, slot: edit.slot,
         });
-      }
-      setEdit(null);
-      mutate();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed (duplicate serial or slot taken?)");
-    }
+    if ("error" in res) { setError(res.error); return; }
+    setEdit(null);
+    mutate();
   }
 
   async function doMove() {
     if (!edit?.machine || !moveLoc) return;
     setError("");
     if (!isOpenArea(moveLoc) && moveSlot === "") { setError("Pick a slot in the destination rack."); return; }
-    try {
-      await moveAction(edit.machine.id, moveLoc, isOpenArea(moveLoc) ? null : Number(moveSlot));
-      setEdit(null);
-      mutate();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Move failed (slot taken?)");
-    }
+    const res = await moveAction(edit.machine.id, moveLoc, isOpenArea(moveLoc) ? null : Number(moveSlot));
+    if ("error" in res) { setError(res.error); return; }
+    setEdit(null);
+    mutate();
   }
 
   async function doRemove() {
