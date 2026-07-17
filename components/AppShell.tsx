@@ -66,7 +66,7 @@ export function AppShell({
         {tab("/totals", "Totals")}
         {tab("/activity", "Activity")}
       </nav>
-      <main className="p-4">{children}</main>
+      <main className="p-2 sm:p-4">{children}</main>
     </div>
   );
 }

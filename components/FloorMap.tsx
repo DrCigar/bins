@@ -1,12 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Machine, PRE_DEPLOYMENT, OUTBOUND, INBOUND } from "@/lib/domain/types";
 import {
   RACKS, rackCapacity, FLOOR, MAP_SCALE, ZONE_DIVIDER_Y,
   PRE_DEPLOYMENT_AREA, PRE_DEPLOYMENT_CAPACITY, OUTBOUND_AREA, INBOUND_AREA,
 } from "@/lib/layout/warehouse";
-
-const s = (n: number) => n * MAP_SCALE;
 
 export function FloorMap({
   machines, onSelect,
@@ -16,6 +14,20 @@ export function FloorMap({
 }) {
   const countAt = (label: string) => machines.filter((x) => x.location === label).length;
   const [hover, setHover] = useState<{ label: string; x: number; y: number } | null>(null);
+
+  // Scale the fixed-size floor to fit the available width (capped at the desktop size).
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(MAP_SCALE);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const update = () => setScale(Math.min(MAP_SCALE, el.clientWidth / FLOOR.w));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const s = (n: number) => n * scale;
 
   const hoverData = hover
     ? (() => {
@@ -30,9 +42,10 @@ export function FloorMap({
     : null;
 
   return (
+    <div ref={wrapRef} className="w-full">
     <div
       className="relative mx-auto bg-pos-surface2 border border-pos-line rounded-lg overflow-hidden"
-      style={{ width: s(FLOOR.w), height: s(FLOOR.h), maxWidth: "100%" }}
+      style={{ width: s(FLOOR.w), height: s(FLOOR.h) }}
     >
       <div className="absolute border-t border-dashed border-neutral-700" style={{ left: 0, top: s(ZONE_DIVIDER_Y), width: s(490) }} />
       <span className="absolute text-[11px] tracking-wider text-neutral-500" style={{ left: s(12), top: s(10) }}>MAIN WAREHOUSE</span>
@@ -113,6 +126,7 @@ export function FloorMap({
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }
