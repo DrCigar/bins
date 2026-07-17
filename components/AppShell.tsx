@@ -29,12 +29,11 @@ export function AppShell({
 
   return (
     <div>
-      <header className="relative flex items-center justify-between gap-3 px-4 py-3 bg-black border-l-4 border-pos-vermilion">
-        <Image src="/pos360-logo.png" alt="POS360" width={149} height={40} priority />
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <header className="flex flex-col items-center gap-3 px-4 py-3 bg-black border-l-4 border-pos-vermilion">
+        <Image src="/pos360-logo.png" alt="POS360" width={149} height={40} priority className="mx-auto" />
+        <div className="flex w-full flex-wrap items-center justify-center gap-3 sm:justify-between">
           <SerialSearch machines={machines} autoFocus={autoFocusSearch} />
-        </div>
-        <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
           <button
             onClick={onSerialize}
             className="text-sm font-medium px-3 py-1.5 rounded-md border border-pos-line hover:bg-neutral-900"
@@ -59,6 +58,7 @@ export function AppShell({
           >
             Export CSV
           </a>
+          </div>
         </div>
       </header>
       <nav className="flex gap-5 px-4 bg-black border-b border-pos-line pt-1">
