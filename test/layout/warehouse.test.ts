@@ -18,18 +18,18 @@ describe("staging + areas", () => {
 });
 
 describe("warehouse layout", () => {
-  it("has 21 racks with unique labels", () => {
-    expect(RACKS).toHaveLength(21);
-    expect(new Set(RACKS.map((r) => r.label)).size).toBe(21);
+  it("has 22 racks with unique labels", () => {
+    expect(RACKS).toHaveLength(22);
+    expect(new Set(RACKS.map((r) => r.label)).size).toBe(22);
   });
   it("new 8-slot racks GG/BB/CC", () => {
     expect(rackCapacity("GG")).toBe(8);
     expect(rackCapacity("BB")).toBe(8);
     expect(rackCapacity("CC")).toBe(8);
   });
-  it("retired N, O, P", () => {
+  it("has N (den rack) but not O or P", () => {
     const labels = RACKS.map((r) => r.label);
-    expect(labels).not.toContain("N");
+    expect(labels).toContain("N");
     expect(labels).not.toContain("O");
     expect(labels).not.toContain("P");
   });

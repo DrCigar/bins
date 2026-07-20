@@ -21,7 +21,7 @@ export interface RackConfig {
 // the new metal racks AA/EE/FF (4x2 = 8) and HH/II (4x4 = 16) are silver.
 export const RACKS: RackConfig[] = [
   // Main warehouse — top row
-  { label: "H", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 180, y: 40, w: 16, h: 50 },
+  { label: "H", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 176, y: 40, w: 16, h: 50 },
   { label: "AA", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 258, y: 40, w: 24, h: 24 },
   { label: "GG", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 258, y: 66, w: 24, h: 24 },
   { label: "A", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 292, y: 40, w: 16, h: 50 },
@@ -40,8 +40,9 @@ export const RACKS: RackConfig[] = [
   { label: "EE", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 185, y: 154, w: 24, h: 24 },
   { label: "FF", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 185, y: 186, w: 24, h: 24 },
   // Office / Den
-  { label: "K", zone: "office_den", rows: 5, cols: 5, material: "black", x: 99, y: 300, w: 50, h: 16 },
-  { label: "L", zone: "office_den", rows: 5, cols: 5, material: "black", x: 99, y: 344, w: 50, h: 16 },
+  { label: "K", zone: "office_den", rows: 5, cols: 5, material: "black", x: 60, y: 310, w: 50, h: 16 },
+  { label: "L", zone: "office_den", rows: 5, cols: 5, material: "black", x: 60, y: 360, w: 50, h: 16 },
+  { label: "N", zone: "office_den", rows: 5, cols: 5, material: "black", x: 125, y: 310, w: 50, h: 16 },
   { label: "M", zone: "office_den", rows: 5, cols: 5, material: "black", x: 180, y: 280, w: 16, h: 50 },
   { label: "J", zone: "office_den", rows: 5, cols: 5, material: "black", x: 195, y: 360, w: 16, h: 50 },
 ];
