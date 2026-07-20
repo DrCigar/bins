@@ -22,14 +22,14 @@ export interface RackConfig {
 export const RACKS: RackConfig[] = [
   // Main warehouse — top row
   { label: "H", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 176, y: 40, w: 16, h: 50 },
-  { label: "AA", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 258, y: 40, w: 16, h: 24 },
-  { label: "GG", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 258, y: 72, w: 16, h: 24 },
+  { label: "AA", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 258, y: 40, w: 28, h: 16 },
+  { label: "GG", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 258, y: 72, w: 28, h: 16 },
   { label: "A", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 292, y: 40, w: 16, h: 50 },
   { label: "B", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 310, y: 40, w: 16, h: 50 },
-  { label: "BB", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 335, y: 40, w: 16, h: 24 },
+  { label: "BB", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 328, y: 40, w: 28, h: 16 },
   { label: "C", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 360, y: 40, w: 16, h: 50 },
   { label: "D", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 378, y: 40, w: 16, h: 50 },
-  { label: "CC", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 406, y: 40, w: 16, h: 24 },
+  { label: "CC", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 400, y: 40, w: 28, h: 16 },
   { label: "E", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 434, y: 40, w: 16, h: 50 },
   { label: "F", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 452, y: 40, w: 16, h: 50 },
   // Main warehouse — middle
