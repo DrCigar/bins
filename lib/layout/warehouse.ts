@@ -22,14 +22,14 @@ export interface RackConfig {
 export const RACKS: RackConfig[] = [
   // Main warehouse — top row
   { label: "H", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 176, y: 40, w: 16, h: 50 },
-  { label: "AA", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 258, y: 40, w: 24, h: 24 },
-  { label: "GG", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 258, y: 66, w: 24, h: 24 },
+  { label: "AA", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 258, y: 40, w: 16, h: 24 },
+  { label: "GG", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 258, y: 72, w: 16, h: 24 },
   { label: "A", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 292, y: 40, w: 16, h: 50 },
   { label: "B", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 310, y: 40, w: 16, h: 50 },
-  { label: "BB", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 332, y: 40, w: 24, h: 24 },
+  { label: "BB", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 335, y: 40, w: 16, h: 24 },
   { label: "C", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 360, y: 40, w: 16, h: 50 },
   { label: "D", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 378, y: 40, w: 16, h: 50 },
-  { label: "CC", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 400, y: 40, w: 24, h: 24 },
+  { label: "CC", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 406, y: 40, w: 16, h: 24 },
   { label: "E", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 434, y: 40, w: 16, h: 50 },
   { label: "F", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 452, y: 40, w: 16, h: 50 },
   // Main warehouse — middle
@@ -37,8 +37,8 @@ export const RACKS: RackConfig[] = [
   { label: "HH", zone: "main_warehouse", rows: 4, cols: 4, material: "silver", x: 303, y: 156, w: 54, h: 22, isStaging: true },
   { label: "II", zone: "main_warehouse", rows: 4, cols: 4, material: "silver", x: 357, y: 156, w: 54, h: 22, isStaging: true },
   { label: "I", zone: "main_warehouse", rows: 5, cols: 5, material: "black", x: 303, y: 206, w: 54, h: 16 },
-  { label: "EE", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 185, y: 154, w: 24, h: 24 },
-  { label: "FF", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 185, y: 186, w: 24, h: 24 },
+  { label: "EE", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 185, y: 150, w: 16, h: 24 },
+  { label: "FF", zone: "main_warehouse", rows: 4, cols: 2, material: "silver", x: 185, y: 182, w: 16, h: 24 },
   // Office / Den
   { label: "K", zone: "office_den", rows: 5, cols: 5, material: "black", x: 60, y: 310, w: 50, h: 16 },
   { label: "L", zone: "office_den", rows: 5, cols: 5, material: "black", x: 60, y: 360, w: 50, h: 16 },
