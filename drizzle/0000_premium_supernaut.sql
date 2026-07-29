@@ -17,6 +17,14 @@ CREATE TABLE "machines" (
 	CONSTRAINT "machines_location_slot_unique" UNIQUE("location","slot")
 );
 --> statement-breakpoint
+CREATE TABLE "manual_counts" (
+	"location" text NOT NULL,
+	"model" text NOT NULL,
+	"primary_count" integer DEFAULT 0 NOT NULL,
+	"secondary_count" integer DEFAULT 0 NOT NULL,
+	CONSTRAINT "manual_counts_location_model_pk" PRIMARY KEY("location","model")
+);
+--> statement-breakpoint
 CREATE TABLE "serial_counters" (
 	"key" text PRIMARY KEY NOT NULL,
 	"n" integer NOT NULL

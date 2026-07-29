@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getReadyDb } from "@/lib/db/client";
 import * as repo from "@/lib/db/repo";
-import { MODELS, ROLES, STATUSES, PRODUCT_LINES, Model, Role, Status, ProductLine } from "@/lib/domain/types";
+import { MODELS, ROLES, STATUSES, PRODUCT_LINES, MANUAL_LOCATIONS, Model, Role, Status, ProductLine } from "@/lib/domain/types";
 import { areaCapacity } from "@/lib/layout/warehouse";
 import { isValidPasscode, COOKIE_NAME } from "@/lib/auth";
 
@@ -165,6 +165,21 @@ export async function moveManyAction(ids: number[], location: string): Promise<{
   revalidatePath("/");
   revalidatePath("/totals");
   return { moved: movedIds.length };
+}
+
+export async function setManualCountAction(
+  location: string, model: string, primaryCount: number, secondaryCount: number,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    const loc = assertEnum(MANUAL_LOCATIONS, location, "location");
+    const mdl = assertEnum(MODELS, model, "model");
+    const clamp = (n: number) => Math.max(0, Math.floor(Number.isFinite(n) ? n : 0));
+    await repo.setManualCount(await getReadyDb(), loc, mdl, clamp(primaryCount), clamp(secondaryCount));
+    revalidatePath("/totals");
+    return { ok: true };
+  } catch (e) {
+    return { error: friendlyError(e) };
+  }
 }
 
 export async function clearAreaAction(location: string): Promise<{ cleared: number }> {

@@ -25,6 +25,11 @@ beforeEach(async () => {
       role text not null, model text not null, assembled_by text,
       serialized_at timestamptz not null default now()
     );
+    CREATE TABLE manual_counts (
+      location text not null, model text not null,
+      primary_count integer not null default 0, secondary_count integer not null default 0,
+      primary key (location, model)
+    );
   `);
 });
 
@@ -85,6 +90,20 @@ describe("repo.checkOutToStore", () => {
     expect(out.slot).toBeNull();
     expect(out.destination).toBe("Store #12");
     expect(out.checkedOutAt).not.toBeNull();
+  });
+});
+
+describe("repo.manualCounts", () => {
+  it("upserts and lists manual off-site counts", async () => {
+    await repo.setManualCount(db, "San Diego", "Matsuda", 5, 3);
+    let rows = await repo.listManualCounts(db);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ location: "San Diego", model: "Matsuda", primaryCount: 5, secondaryCount: 3 });
+    // second call to same key updates, not duplicates
+    await repo.setManualCount(db, "San Diego", "Matsuda", 8, 1);
+    rows = await repo.listManualCounts(db);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ primaryCount: 8, secondaryCount: 1 });
   });
 });
 

@@ -56,6 +56,14 @@ const DDL_EVENTS = sql`CREATE TABLE IF NOT EXISTS serialization_events (
   serialized_at timestamptz NOT NULL DEFAULT now()
 )`;
 
+const DDL_MANUAL = sql`CREATE TABLE IF NOT EXISTS manual_counts (
+  location text NOT NULL,
+  model text NOT NULL,
+  primary_count integer NOT NULL DEFAULT 0,
+  secondary_count integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (location, model)
+)`;
+
 export async function getReadyDb(): Promise<DrizzleDb> {
   const db = getDb();
   if (!schemaReady) {
@@ -64,6 +72,7 @@ export async function getReadyDb(): Promise<DrizzleDb> {
       await db.execute(DDL_ALTER);
       await db.execute(DDL_COUNTERS);
       await db.execute(DDL_EVENTS);
+      await db.execute(DDL_MANUAL);
     })().catch((err) => {
       schemaReady = null; // allow retry on next request
       throw err;

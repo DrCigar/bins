@@ -1,5 +1,5 @@
 import { eq, sql, inArray } from "drizzle-orm";
-import { machines, serializationEvents, MachineRow, SerializationEventRow } from "./schema";
+import { machines, serializationEvents, manualCounts, MachineRow, SerializationEventRow, ManualCountRow } from "./schema";
 import { Machine, Model, Role, Status, ProductLine, SerializationEvent, OUT, isOpenArea } from "@/lib/domain/types";
 import { prefixFor, buildSerial, incrementSerial } from "@/lib/domain/serial";
 import { rackCapacity, areaCapacity } from "@/lib/layout/warehouse";
@@ -211,4 +211,25 @@ const toEvent = (r: SerializationEventRow): SerializationEvent => ({
 export async function listSerializationEvents(db: AnyDb): Promise<SerializationEvent[]> {
   const rows = await db.select().from(serializationEvents);
   return rows.map(toEvent);
+}
+
+export async function listManualCounts(db: AnyDb): Promise<ManualCountRow[]> {
+  return db.select().from(manualCounts);
+}
+
+// Upsert a manual off-site count for a (location, model).
+export async function setManualCount(
+  db: AnyDb,
+  location: string,
+  model: string,
+  primaryCount: number,
+  secondaryCount: number,
+): Promise<void> {
+  await db
+    .insert(manualCounts)
+    .values({ location, model, primaryCount, secondaryCount })
+    .onConflictDoUpdate({
+      target: [manualCounts.location, manualCounts.model],
+      set: { primaryCount, secondaryCount },
+    });
 }

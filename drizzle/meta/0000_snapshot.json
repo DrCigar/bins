@@ -1,5 +1,5 @@
 {
-  "id": "7a703dbd-74be-42d1-b4b8-0f5af76014a4",
+  "id": "a97b1e76-8aab-4b80-a63b-b368b0642e34",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -115,6 +115,53 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.manual_counts": {
+      "name": "manual_counts",
+      "schema": "",
+      "columns": {
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "primary_count": {
+          "name": "primary_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "secondary_count": {
+          "name": "secondary_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "manual_counts_location_model_pk": {
+          "name": "manual_counts_location_model_pk",
+          "columns": [
+            "location",
+            "model"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

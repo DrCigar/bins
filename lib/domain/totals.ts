@@ -60,14 +60,10 @@ export function computeLineTotals(machines: Machine[]): LineTotals {
   for (const line of PRODUCT_LINES) {
     for (const role of ROLES) {
       const subset = onHand.filter((x) => x.productLine === line && x.role === role);
-      rows.push({
-        line,
-        role,
-        New: subset.filter((x) => x.status === "New").length,
-        Used: subset.filter((x) => x.status === "Used").length,
-        Broken: subset.filter((x) => x.status === "Broken").length,
-        total: subset.length,
-      });
+      const New = subset.filter((x) => x.status === "New").length;
+      const Used = subset.filter((x) => x.status === "Used").length;
+      const Broken = subset.filter((x) => x.status === "Broken").length;
+      rows.push({ line, role, New, Used, Broken, total: New + Used }); // total excludes broken
     }
   }
   const grand = {

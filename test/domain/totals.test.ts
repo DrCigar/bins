@@ -57,7 +57,9 @@ describe("computeLineTotals", () => {
     ];
     const t = computeLineTotals(list);
     expect(t.rows.find((r) => r.line === "360 Pro" && r.role === "Primary")).toMatchObject({ New: 1, total: 1 });
-    expect(t.rows.find((r) => r.line === "360 Smoke" && r.role === "Secondary")).toMatchObject({ Broken: 1, total: 1 });
+    // total excludes broken: this row has only a broken unit → total 0
+    expect(t.rows.find((r) => r.line === "360 Smoke" && r.role === "Secondary")).toMatchObject({ Broken: 1, total: 0 });
+    expect(t.grand.total).toBe(1); // only the New Matsuda counts; broken excluded
     expect(t.byModel.Matsuda).toBe(1); // Out excluded
     expect(t.byModel.Yunos).toBe(1);
     expect(t.rows).toHaveLength(4);

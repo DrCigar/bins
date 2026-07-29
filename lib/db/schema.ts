@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp, unique } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, timestamp, unique, primaryKey } from "drizzle-orm/pg-core";
 
 export const machines = pgTable("machines", {
   id: serial("id").primaryKey(),
@@ -34,6 +34,17 @@ export const serializationEvents = pgTable("serialization_events", {
   assembledBy: text("assembled_by"),
   serializedAt: timestamp("serialized_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Manually-entered off-site store counts (San Diego / San Francisco), per model.
+export const manualCounts = pgTable("manual_counts", {
+  location: text("location").notNull(),
+  model: text("model").notNull(),
+  primaryCount: integer("primary_count").notNull().default(0),
+  secondaryCount: integer("secondary_count").notNull().default(0),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.location, t.model] }),
+}));
+export type ManualCountRow = typeof manualCounts.$inferSelect;
 
 export type MachineRow = typeof machines.$inferSelect;
 export type NewMachineRow = typeof machines.$inferInsert;

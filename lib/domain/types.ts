@@ -12,6 +12,10 @@ export type ProductLine = (typeof PRODUCT_LINES)[number];
 
 export const ASSEMBLERS = ["Thang", "Jeremy"] as const;
 
+// Off-site store locations with manually-entered counts (not tracked on the floor map).
+export const MANUAL_LOCATIONS = ["San Diego", "San Francisco"] as const;
+export type ManualLocation = (typeof MANUAL_LOCATIONS)[number];
+
 // Serial prefix per product line + role (e.g. 360 Smoke Primary -> SMKP).
 export const SERIAL_PREFIX: Record<ProductLine, Record<Role, string>> = {
   "360 Pro": { Primary: "S36P", Secondary: "S36S" },
