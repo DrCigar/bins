@@ -14,7 +14,7 @@ export function SerialSearch({ machines, autoFocus = false }: { machines: Machin
     const hit = machines.find((m) => m.serial?.toLowerCase() === query);
     if (hit && hit.location !== OUT) {
       setMiss(false);
-      router.push(`/rack/${encodeURIComponent(hit.location)}?slot=${hit.slot ?? ""}`);
+      router.push(`/rack/${encodeURIComponent(hit.location)}?hl=${hit.id}`);
     } else {
       setMiss(true);
     }

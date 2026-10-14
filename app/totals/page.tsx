@@ -5,7 +5,6 @@ import { AppShell } from "@/components/AppShell";
 import { TotalsTable } from "@/components/TotalsTable";
 import { ManualTotals } from "@/components/ManualTotals";
 import { CheckInDialog } from "@/components/CheckInDialog";
-import { CheckOutDialog } from "@/components/CheckOutDialog";
 import { SerializeDialog } from "@/components/SerializeDialog";
 import { fetcher } from "@/lib/fetcher";
 import { Machine, OUT, PRE_DEPLOYMENT, MANUAL_LOCATIONS, MODELS, Model } from "@/lib/domain/types";
@@ -24,7 +23,6 @@ export default function TotalsPage() {
   const { data: manual = [] } = useSWR<ManualCountRow[]>("/api/manual", fetcher);
   const [serialize, setSerialize] = useState(false);
   const [checkIn, setCheckIn] = useState(false);
-  const [checkOut, setCheckOut] = useState(false);
 
   const onHand = machines.filter((m) => m.location !== OUT);
   const good = onHand.filter((m) => m.status !== "Broken").length; // totals exclude broken
@@ -39,7 +37,7 @@ export default function TotalsPage() {
   );
 
   return (
-    <AppShell machines={machines} onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
+    <AppShell machines={machines} onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)}>
       <div className="grid grid-cols-3 gap-3 mb-4 max-w-md">
         {stat("On hand", good)}
         {stat("Broken", broken, true)}
@@ -60,7 +58,6 @@ export default function TotalsPage() {
 
       <SerializeDialog open={serialize} onClose={() => setSerialize(false)} onDone={() => mutate()} />
       <CheckInDialog open={checkIn} onClose={() => { setCheckIn(false); mutate(); }} machines={machines} />
-      <CheckOutDialog open={checkOut} onClose={() => { setCheckOut(false); mutate(); }} machines={machines} />
     </AppShell>
   );
 }

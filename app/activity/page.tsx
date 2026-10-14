@@ -3,7 +3,6 @@ import useSWR from "swr";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { CheckInDialog } from "@/components/CheckInDialog";
-import { CheckOutDialog } from "@/components/CheckOutDialog";
 import { SerializeDialog } from "@/components/SerializeDialog";
 import { fetcher } from "@/lib/fetcher";
 import { groupSerializationByDay } from "@/lib/domain/activity";
@@ -21,12 +20,11 @@ export default function ActivityPage() {
   const { data: events = [] } = useSWR<SerializationEvent[]>("/api/serialization", fetcher, { refreshInterval: 8000 });
   const [serialize, setSerialize] = useState(false);
   const [checkIn, setCheckIn] = useState(false);
-  const [checkOut, setCheckOut] = useState(false);
 
   const groups = groupSerializationByDay(events);
 
   return (
-    <AppShell machines={machines} onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
+    <AppShell machines={machines} onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)}>
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-base font-medium">Serialization activity</h2>
@@ -74,7 +72,6 @@ export default function ActivityPage() {
 
       <SerializeDialog open={serialize} onClose={() => setSerialize(false)} onDone={() => mutate()} />
       <CheckInDialog open={checkIn} onClose={() => { setCheckIn(false); mutate(); }} machines={machines} />
-      <CheckOutDialog open={checkOut} onClose={() => { setCheckOut(false); mutate(); }} machines={machines} />
     </AppShell>
   );
 }

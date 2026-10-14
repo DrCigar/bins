@@ -1,21 +1,23 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { SerialSearch } from "./SerialSearch";
+import { ScanDialog } from "./ScanDialog";
 import { Machine } from "@/lib/domain/types";
 
 export function AppShell({
-  children, machines, onSerialize, onCheckIn, onCheckOut, autoFocusSearch = false,
+  children, machines, onSerialize, onCheckIn, autoFocusSearch = false,
 }: {
   children: React.ReactNode;
   machines: Machine[];
   onSerialize: () => void;
   onCheckIn: () => void;
-  onCheckOut: () => void;
   autoFocusSearch?: boolean;
 }) {
   const path = usePathname();
+  const [scanOpen, setScanOpen] = useState(false);
   const tab = (href: string, label: string) => (
     <Link
       href={href}
@@ -47,10 +49,13 @@ export function AppShell({
             Check In
           </button>
           <button
-            onClick={onCheckOut}
-            className="text-sm font-medium px-3 py-1.5 rounded-md bg-pos-vermilion text-white"
+            onClick={() => setScanOpen(true)}
+            className="text-sm font-medium px-3 py-1.5 rounded-md bg-pos-vermilion text-white flex items-center gap-1.5"
           >
-            Check Out
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M6 12h12" />
+            </svg>
+            Scan / Find
           </button>
           <a
             href="/api/export"
@@ -67,6 +72,7 @@ export function AppShell({
         {tab("/activity", "Activity")}
       </nav>
       <main className="p-2 sm:p-4">{children}</main>
+      <ScanDialog open={scanOpen} onClose={() => setScanOpen(false)} machines={machines} />
     </div>
   );
 }

@@ -1,13 +1,12 @@
 "use client";
 import useSWR from "swr";
-import { use, useState } from "react";
-import { useRouter } from "next/navigation";
+import { use, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { RackDetail } from "@/components/RackDetail";
 import { Dialog } from "@/components/Dialog";
 import { MachineForm, MachineFormValue, emptyMachineForm } from "@/components/MachineForm";
 import { CheckInDialog } from "@/components/CheckInDialog";
-import { CheckOutDialog } from "@/components/CheckOutDialog";
 import { SerializeDialog } from "@/components/SerializeDialog";
 import { fetcher } from "@/lib/fetcher";
 import { updateMachineAction, removeAction, checkInAction, moveAction, moveManyAction, clearAreaAction } from "@/app/actions";
@@ -30,12 +29,21 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
   const [confirmDel, setConfirmDel] = useState(false);
   const [serialize, setSerialize] = useState(false);
   const [checkIn, setCheckIn] = useState(false);
-  const [checkOut, setCheckOut] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkDest, setBulkDest] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
   const router = useRouter();
+
+  // When arrived here via Scan / Find (?hl=<id>), pulse that unit for a few seconds.
+  const hlParam = useSearchParams().get("hl");
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+  useEffect(() => {
+    if (!hlParam) return;
+    setHighlightId(Number(hlParam));
+    const t = setTimeout(() => setHighlightId(null), 5000);
+    return () => clearTimeout(t);
+  }, [hlParam]);
 
   const toggleSelect = (id: number) =>
     setSelectedIds((prev) => {
@@ -134,7 +142,7 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
     : `Add to ${decoded}${edit?.slot ? `-${String(edit.slot).padStart(2, "0")}` : ""}`;
 
   return (
-    <AppShell machines={machines} onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)} onCheckOut={() => setCheckOut(true)}>
+    <AppShell machines={machines} onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)}>
       <div className="flex items-center gap-3 mb-3">
         <button onClick={() => router.push("/")} className="text-xs text-neutral-400 hover:text-white">
           ← Back to map
@@ -190,6 +198,7 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
         selectMode={selectMode}
         selectedIds={selectedIds}
         onToggleSelect={toggleSelect}
+        highlightId={highlightId}
       />
 
       <Dialog open={!!edit} title={title} onClose={() => setEdit(null)}>
@@ -266,7 +275,6 @@ export default function RackPage({ params }: { params: Promise<{ label: string }
 
       <SerializeDialog open={serialize} onClose={() => setSerialize(false)} onDone={() => mutate()} />
       <CheckInDialog open={checkIn} onClose={() => { setCheckIn(false); mutate(); }} machines={machines} />
-      <CheckOutDialog open={checkOut} onClose={() => { setCheckOut(false); mutate(); }} machines={machines} />
     </AppShell>
   );
 }

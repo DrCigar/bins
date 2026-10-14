@@ -3,16 +3,13 @@ import { Machine, roleTag, isOpenArea, PRE_DEPLOYMENT } from "@/lib/domain/types
 import { rackCapacity, rackCols, slotLabel, PRE_DEPLOYMENT_CAPACITY } from "@/lib/layout/warehouse";
 import { StatusBadge } from "./StatusBadge";
 
-const dotFor = (m: Machine) =>
-  m.status === "New" ? "text-status-new" : m.status === "Used" ? "text-status-used" : "text-status-broken";
-
-function FilledCard({ label, m, onClick, selected = false }: { label: string; m: Machine; onClick: () => void; selected?: boolean }) {
+function FilledCard({ label, m, onClick, selected = false, highlight = false }: { label: string; m: Machine; onClick: () => void; selected?: boolean; highlight?: boolean }) {
   const missingSerial = !m.serial;
   return (
     <button
       onClick={onClick}
       className={`text-left rounded-md p-2 border bg-pos-surface hover:border-neutral-500 ${
-        selected ? "border-pos-vermilion ring-1 ring-pos-vermilion" : missingSerial ? "border-status-broken animate-blink" : "border-pos-line"
+        highlight ? "border-pos-vermilion animate-flash" : selected ? "border-pos-vermilion ring-1 ring-pos-vermilion" : missingSerial ? "border-status-broken animate-blink" : "border-pos-line"
       }`}
     >
       <p className="text-[10px] text-neutral-500">{selected ? "✓ " : ""}{label}</p>
@@ -24,16 +21,20 @@ function FilledCard({ label, m, onClick, selected = false }: { label: string; m:
       ) : (
         <p className="text-[10px] text-neutral-400 truncate">{m.serial}</p>
       )}
-      <div className="mt-1 flex items-center gap-1">
+      <div className="mt-1">
         <StatusBadge status={m.status} />
-        {m.notes ? <span title={m.notes} className={`${dotFor(m)} text-[11px]`}>●</span> : null}
       </div>
+      {m.notes ? (
+        <p className="mt-1 text-[10px] leading-snug text-neutral-300 whitespace-pre-wrap break-words">
+          <span className="text-neutral-500">memo:</span> {m.notes}
+        </p>
+      ) : null}
     </button>
   );
 }
 
 export function RackDetail({
-  label, machines, onSlotClick, selectMode = false, selectedIds, onToggleSelect,
+  label, machines, onSlotClick, selectMode = false, selectedIds, onToggleSelect, highlightId,
 }: {
   label: string;
   machines: Machine[];
@@ -41,12 +42,14 @@ export function RackDetail({
   selectMode?: boolean;
   selectedIds?: Set<number>;
   onToggleSelect?: (id: number) => void;
+  highlightId?: number | null;
 }) {
   const here = machines.filter((m) => m.location === label);
   // In select mode, clicking a filled card toggles its selection instead of opening it.
   const cardClick = (m: Machine, slot: number | null) =>
     selectMode ? onToggleSelect?.(m.id) : onSlotClick(slot, m);
   const isSel = (m: Machine) => Boolean(selectedIds?.has(m.id));
+  const isHl = (m: Machine) => highlightId != null && m.id === highlightId;
 
   if (isOpenArea(label)) {
     const capped = label === PRE_DEPLOYMENT;
@@ -59,7 +62,7 @@ export function RackDetail({
         </h2>
         <div className="grid grid-cols-5 gap-2">
           {here.map((m) => (
-            <FilledCard key={m.id} label={`#${m.id}`} m={m} selected={isSel(m)} onClick={() => cardClick(m, null)} />
+            <FilledCard key={m.id} label={`#${m.id}`} m={m} selected={isSel(m)} highlight={isHl(m)} onClick={() => cardClick(m, null)} />
           ))}
           {!selectMode && canAdd && (
             <button
@@ -91,7 +94,7 @@ export function RackDetail({
           const m = bySlot.get(slotNum) ?? null;
           const cellLabel = slotLabel(label, slotNum);
           return m ? (
-            <FilledCard key={slotNum} label={cellLabel} m={m} selected={isSel(m)} onClick={() => cardClick(m, slotNum)} />
+            <FilledCard key={slotNum} label={cellLabel} m={m} selected={isSel(m)} highlight={isHl(m)} onClick={() => cardClick(m, slotNum)} />
           ) : (
             <button
               key={slotNum}
@@ -113,7 +116,7 @@ export function RackDetail({
           </p>
           <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(cols, 5)}, minmax(0, 1fr))`, maxWidth: cols <= 2 ? 260 : undefined }}>
             {offGrid.map((m) => (
-              <FilledCard key={m.id} label="no slot" m={m} selected={isSel(m)} onClick={() => cardClick(m, m.slot ?? null)} />
+              <FilledCard key={m.id} label="no slot" m={m} selected={isSel(m)} highlight={isHl(m)} onClick={() => cardClick(m, m.slot ?? null)} />
             ))}
           </div>
         </div>
