@@ -16,14 +16,14 @@ export default function Home() {
   const router = useRouter();
 
   const onHand = machines.filter((m) => m.location !== OUT);
-  const broken = onHand.filter((m) => m.status === "Broken").length;
+  const breakdown = onHand.filter((m) => m.status === "Breakdown").length;
 
   return (
     <AppShell machines={machines} autoFocusSearch onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)}>
       <div className="mb-3 flex items-center gap-4">
         <div className="text-xs text-neutral-400 flex gap-4 ml-auto">
           <span><b className="text-white">{onHand.length}</b> on hand</span>
-          <span><b className="text-pos-vermilion">{broken}</b> broken</span>
+          <span><b className="text-pos-vermilion">{breakdown}</b> breakdown</span>
         </div>
       </div>
       <FloorMap machines={machines} onSelect={(label) => router.push(`/rack/${encodeURIComponent(label)}`)} />

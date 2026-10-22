@@ -36,7 +36,8 @@ export function FloorMap({
           total: here.length,
           New: here.filter((m) => m.status === "New").length,
           Used: here.filter((m) => m.status === "Used").length,
-          Broken: here.filter((m) => m.status === "Broken").length,
+          Review: here.filter((m) => m.status === "Review").length,
+          Breakdown: here.filter((m) => m.status === "Breakdown").length,
         };
       })()
     : null;
@@ -119,10 +120,11 @@ export function FloorMap({
         >
           <p className="text-xs font-medium text-white">Rack {hover.label}</p>
           <p className="text-[11px] text-neutral-400">{hoverData.total}/{rackCapacity(hover.label)} filled</p>
-          <div className="mt-1 flex gap-2 text-[10px]">
+          <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px]">
             <span className="text-status-new">{hoverData.New} new</span>
             <span className="text-status-used">{hoverData.Used} used</span>
-            <span className="text-status-broken">{hoverData.Broken} broken</span>
+            <span className="text-status-review">{hoverData.Review} review</span>
+            <span className="text-status-broken">{hoverData.Breakdown} breakdown</span>
           </div>
         </div>
       )}

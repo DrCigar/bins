@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeTotals, computeLineTotals, computeStatusBreakdown } from "@/lib/domain/totals";
+import { computeLineTotals, computeStatusBreakdown } from "@/lib/domain/totals";
 import type { Machine } from "@/lib/domain/types";
 
 const m = (over: Partial<Machine>): Machine => ({
@@ -9,42 +9,21 @@ const m = (over: Partial<Machine>): Machine => ({
   checkedOutAt: null, createdAt: new Date(), updatedAt: new Date(), ...over,
 });
 
-describe("computeTotals", () => {
-  it("counts by model+role+status and excludes Out machines", () => {
-    const list = [
-      m({ id: 1, model: "Matsuda", role: "Primary", status: "New" }),
-      m({ id: 2, model: "Matsuda", role: "Primary", status: "Broken" }),
-      m({ id: 3, model: "Matsuda", role: "Primary", status: "New", location: "Out" }),
-      m({ id: 4, model: "Hanasis", role: "Secondary", status: "Used", location: "Pre-Deployment", slot: null }),
-    ];
-    const t = computeTotals(list);
-    const matsudaP = t.rows.find((r) => r.model === "Matsuda" && r.role === "Primary")!;
-    expect(matsudaP).toMatchObject({ New: 1, Used: 0, Broken: 1, total: 2 });
-    const hanasisS = t.rows.find((r) => r.model === "Hanasis" && r.role === "Secondary")!;
-    expect(hanasisS).toMatchObject({ Used: 1, total: 1 });
-    expect(t.grand).toMatchObject({ New: 1, Used: 1, Broken: 1, total: 3 });
-  });
-
-  it("returns all 6 model x role rows even when empty", () => {
-    const t = computeTotals([]);
-    expect(t.rows).toHaveLength(6);
-    expect(t.grand.total).toBe(0);
-  });
-});
-
 describe("computeStatusBreakdown", () => {
   it("splits each status by model and role, excluding Out", () => {
     const list = [
       m({ status: "New", model: "Matsuda", role: "Primary" }),
       m({ status: "New", model: "Matsuda", role: "Secondary" }),
       m({ status: "Used", model: "Hanasis", role: "Primary" }),
+      m({ status: "Review", model: "Yunos", role: "Primary" }),
       m({ status: "New", model: "Matsuda", role: "Primary", location: "Out" }), // excluded
     ];
     const b = computeStatusBreakdown(list);
     expect(b.New.byModel.Matsuda).toMatchObject({ primary: 1, secondary: 1, total: 2 });
     expect(b.New.total).toBe(2);
     expect(b.Used.byModel.Hanasis).toMatchObject({ primary: 1, secondary: 0, total: 1 });
-    expect(b.Broken.total).toBe(0);
+    expect(b.Review.byModel.Yunos.total).toBe(1);
+    expect(b.Breakdown.total).toBe(0);
   });
 });
 
@@ -52,14 +31,25 @@ describe("computeLineTotals", () => {
   it("breaks down by product line x role x status, excluding Out, plus by-model", () => {
     const list = [
       m({ productLine: "360 Pro", role: "Primary", status: "New", model: "Matsuda" }),
-      m({ productLine: "360 Smoke", role: "Secondary", status: "Broken", model: "Yunos" }),
+      m({ productLine: "360 Smoke", role: "Secondary", status: "Breakdown", model: "Yunos" }),
+      m({ productLine: "360 Pro", role: "Secondary", status: "Review", model: "Hanasis" }),
       m({ productLine: "360 Pro", role: "Primary", status: "New", model: "Matsuda", location: "Out" }),
     ];
     const t = computeLineTotals(list);
-    expect(t.rows.find((r) => r.line === "360 Pro" && r.role === "Primary")).toMatchObject({ New: 1, total: 1 });
-    // total excludes broken: this row has only a broken unit → total 0
-    expect(t.rows.find((r) => r.line === "360 Smoke" && r.role === "Secondary")).toMatchObject({ Broken: 1, total: 0 });
-    expect(t.grand.total).toBe(1); // only the New Matsuda counts; broken excluded
+    const proP = t.rows.find((r) => r.line === "360 Pro" && r.role === "Primary")!;
+    expect(proP.byStatus.New).toBe(1);
+    expect(proP.total).toBe(1);
+    // total counts only New + Used: a Breakdown-only row totals 0...
+    const smokeS = t.rows.find((r) => r.line === "360 Smoke" && r.role === "Secondary")!;
+    expect(smokeS.byStatus.Breakdown).toBe(1);
+    expect(smokeS.total).toBe(0);
+    // ...and a Review-only row also totals 0 (Review excluded from totals)
+    const proS = t.rows.find((r) => r.line === "360 Pro" && r.role === "Secondary")!;
+    expect(proS.byStatus.Review).toBe(1);
+    expect(proS.total).toBe(0);
+    expect(t.grand.total).toBe(1); // only the New Matsuda counts
+    expect(t.grand.byStatus.Review).toBe(1);
+    expect(t.grand.byStatus.Breakdown).toBe(1);
     expect(t.byModel.Matsuda).toBe(1); // Out excluded
     expect(t.byModel.Yunos).toBe(1);
     expect(t.rows).toHaveLength(4);

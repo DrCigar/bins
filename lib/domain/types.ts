@@ -4,8 +4,13 @@ export type Model = (typeof MODELS)[number];
 export const ROLES = ["Primary", "Secondary"] as const;
 export type Role = (typeof ROLES)[number];
 
-export const STATUSES = ["New", "Used", "Broken"] as const;
+export const STATUSES = ["New", "Used", "Review", "Breakdown"] as const;
 export type Status = (typeof STATUSES)[number];
+
+// Statuses that count toward on-hand inventory totals. Review and Breakdown are tracked
+// and shown, but not counted as usable stock.
+export const COUNTED_STATUSES = ["New", "Used"] as const satisfies readonly Status[];
+export const countsInTotals = (s: Status): boolean => (COUNTED_STATUSES as readonly Status[]).includes(s);
 
 export const PRODUCT_LINES = ["360 Pro", "360 Smoke"] as const;
 export type ProductLine = (typeof PRODUCT_LINES)[number];

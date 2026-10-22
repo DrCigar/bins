@@ -7,7 +7,7 @@ import { ManualTotals } from "@/components/ManualTotals";
 import { CheckInDialog } from "@/components/CheckInDialog";
 import { SerializeDialog } from "@/components/SerializeDialog";
 import { fetcher } from "@/lib/fetcher";
-import { Machine, OUT, PRE_DEPLOYMENT, MANUAL_LOCATIONS, MODELS, Model } from "@/lib/domain/types";
+import { Machine, OUT, PRE_DEPLOYMENT, MANUAL_LOCATIONS, MODELS, Model, countsInTotals } from "@/lib/domain/types";
 import type { ManualCountRow } from "@/lib/db/schema";
 
 type Cell = { primary: number; secondary: number };
@@ -25,8 +25,9 @@ export default function TotalsPage() {
   const [checkIn, setCheckIn] = useState(false);
 
   const onHand = machines.filter((m) => m.location !== OUT);
-  const good = onHand.filter((m) => m.status !== "Broken").length; // totals exclude broken
-  const broken = onHand.filter((m) => m.status === "Broken").length;
+  const good = onHand.filter((m) => countsInTotals(m.status)).length; // New + Used only
+  const review = onHand.filter((m) => m.status === "Review").length;
+  const breakdown = onHand.filter((m) => m.status === "Breakdown").length;
   const pre = machines.filter((m) => m.location === PRE_DEPLOYMENT).length;
 
   const stat = (label: string, value: number, accent = false) => (
@@ -38,9 +39,10 @@ export default function TotalsPage() {
 
   return (
     <AppShell machines={machines} onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)}>
-      <div className="grid grid-cols-3 gap-3 mb-4 max-w-md">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 max-w-2xl">
         {stat("On hand", good)}
-        {stat("Broken", broken, true)}
+        {stat("Review", review)}
+        {stat("Breakdown", breakdown, true)}
         {stat("Pre-Deployment", pre)}
       </div>
 

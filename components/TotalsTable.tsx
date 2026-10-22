@@ -6,7 +6,8 @@ import { StatusChart } from "./StatusChart";
 const STATUS_TEXT: Record<Status, string> = {
   New: "text-status-new",
   Used: "text-status-used",
-  Broken: "text-status-broken",
+  Review: "text-status-review",
+  Breakdown: "text-status-broken",
 };
 
 export function TotalsTable({ machines }: { machines: Machine[] }) {
@@ -20,9 +21,7 @@ export function TotalsTable({ machines }: { machines: Machine[] }) {
           <tr className="bg-pos-vermilion text-white text-left">
             <th className="p-2 font-medium">Product line</th>
             <th className="p-2 font-medium">Role</th>
-            <th className="p-2 font-medium">New</th>
-            <th className="p-2 font-medium">Used</th>
-            <th className="p-2 font-medium">Broken</th>
+            {STATUSES.map((s) => <th key={s} className="p-2 font-medium">{s}</th>)}
             <th className="p-2 font-medium">Total</th>
           </tr>
         </thead>
@@ -31,18 +30,14 @@ export function TotalsTable({ machines }: { machines: Machine[] }) {
             <tr key={`${r.line}-${r.role}`} className={i % 2 ? "bg-white/[0.03]" : ""}>
               <td className="p-2">{r.line}</td>
               <td className="p-2 text-neutral-400">{r.role}</td>
-              <td className="p-2">{r.New}</td>
-              <td className="p-2">{r.Used}</td>
-              <td className="p-2">{r.Broken}</td>
+              {STATUSES.map((s) => <td key={s} className="p-2">{r.byStatus[s]}</td>)}
               <td className="p-2 font-medium">{r.total}</td>
             </tr>
           ))}
           <tr className="border-t border-pos-line font-medium">
             <td className="p-2">All</td>
             <td className="p-2" />
-            <td className="p-2">{grand.New}</td>
-            <td className="p-2">{grand.Used}</td>
-            <td className="p-2 text-status-broken">{grand.Broken}</td>
+            {STATUSES.map((s) => <td key={s} className={`p-2 ${STATUS_TEXT[s]}`}>{grand.byStatus[s]}</td>)}
             <td className="p-2">{grand.total}</td>
           </tr>
         </tbody>

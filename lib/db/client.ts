@@ -64,6 +64,9 @@ const DDL_MANUAL = sql`CREATE TABLE IF NOT EXISTS manual_counts (
   PRIMARY KEY (location, model)
 )`;
 
+// Status rename: the old "Broken" status is now "Breakdown". Idempotent — no-op once migrated.
+const DML_STATUS_RENAME = sql`UPDATE machines SET status = 'Breakdown' WHERE status = 'Broken'`;
+
 export async function getReadyDb(): Promise<DrizzleDb> {
   const db = getDb();
   if (!schemaReady) {
@@ -73,6 +76,7 @@ export async function getReadyDb(): Promise<DrizzleDb> {
       await db.execute(DDL_COUNTERS);
       await db.execute(DDL_EVENTS);
       await db.execute(DDL_MANUAL);
+      await db.execute(DML_STATUS_RENAME);
     })().catch((err) => {
       schemaReady = null; // allow retry on next request
       throw err;

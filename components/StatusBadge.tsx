@@ -3,7 +3,8 @@ import { Status } from "@/lib/domain/types";
 const MAP: Record<Status, string> = {
   New: "bg-status-new/15 text-status-new",
   Used: "bg-status-used/15 text-status-used",
-  Broken: "bg-status-broken/15 text-status-broken",
+  Review: "bg-status-review/15 text-status-review",
+  Breakdown: "bg-status-broken/15 text-status-broken",
 };
 
 export function StatusBadge({ status }: { status: Status }) {

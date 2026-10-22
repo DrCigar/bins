@@ -1,55 +1,20 @@
-import { Machine, MODELS, ROLES, STATUSES, PRODUCT_LINES, Model, Role, Status, ProductLine, OUT } from "./types";
+import { Machine, MODELS, ROLES, STATUSES, PRODUCT_LINES, COUNTED_STATUSES, Model, Role, Status, ProductLine, OUT } from "./types";
 
-export interface TotalsRow {
-  model: Model;
-  role: Role;
-  New: number;
-  Used: number;
-  Broken: number;
-  total: number;
-}
-export interface Totals {
-  rows: TotalsRow[];
-  grand: Omit<TotalsRow, "model" | "role">;
-}
-
-// On-hand only: machines checked Out are excluded.
-export function computeTotals(machines: Machine[]): Totals {
-  const onHand = machines.filter((x) => x.location !== OUT);
-  const rows: TotalsRow[] = [];
-  for (const model of MODELS) {
-    for (const role of ROLES) {
-      const subset = onHand.filter((x) => x.model === model && x.role === role);
-      rows.push({
-        model,
-        role,
-        New: subset.filter((x) => x.status === "New").length,
-        Used: subset.filter((x) => x.status === "Used").length,
-        Broken: subset.filter((x) => x.status === "Broken").length,
-        total: subset.length,
-      });
-    }
-  }
-  const grand = {
-    New: rows.reduce((s, r) => s + r.New, 0),
-    Used: rows.reduce((s, r) => s + r.Used, 0),
-    Broken: rows.reduce((s, r) => s + r.Broken, 0),
-    total: rows.reduce((s, r) => s + r.total, 0),
-  };
-  return { rows, grand };
-}
+const zeroByStatus = (): Record<Status, number> =>
+  STATUSES.reduce((acc, s) => ({ ...acc, [s]: 0 }), {} as Record<Status, number>);
+// On-hand total counts only the "counted" statuses (New + Used); Review/Breakdown are excluded.
+const countedTotal = (byStatus: Record<Status, number>): number =>
+  COUNTED_STATUSES.reduce((sum, s) => sum + byStatus[s], 0);
 
 export interface LineTotalsRow {
   line: ProductLine;
   role: Role;
-  New: number;
-  Used: number;
-  Broken: number;
+  byStatus: Record<Status, number>;
   total: number;
 }
 export interface LineTotals {
   rows: LineTotalsRow[];
-  grand: Omit<LineTotalsRow, "line" | "role">;
+  grand: { byStatus: Record<Status, number>; total: number };
   byModel: Record<Model, number>;
 }
 
@@ -60,18 +25,14 @@ export function computeLineTotals(machines: Machine[]): LineTotals {
   for (const line of PRODUCT_LINES) {
     for (const role of ROLES) {
       const subset = onHand.filter((x) => x.productLine === line && x.role === role);
-      const New = subset.filter((x) => x.status === "New").length;
-      const Used = subset.filter((x) => x.status === "Used").length;
-      const Broken = subset.filter((x) => x.status === "Broken").length;
-      rows.push({ line, role, New, Used, Broken, total: New + Used }); // total excludes broken
+      const byStatus = zeroByStatus();
+      for (const s of STATUSES) byStatus[s] = subset.filter((x) => x.status === s).length;
+      rows.push({ line, role, byStatus, total: countedTotal(byStatus) });
     }
   }
-  const grand = {
-    New: rows.reduce((s, r) => s + r.New, 0),
-    Used: rows.reduce((s, r) => s + r.Used, 0),
-    Broken: rows.reduce((s, r) => s + r.Broken, 0),
-    total: rows.reduce((s, r) => s + r.total, 0),
-  };
+  const grandByStatus = zeroByStatus();
+  for (const s of STATUSES) grandByStatus[s] = rows.reduce((sum, r) => sum + r.byStatus[s], 0);
+  const grand = { byStatus: grandByStatus, total: countedTotal(grandByStatus) };
   const byModel = MODELS.reduce((acc, model) => {
     acc[model] = onHand.filter((x) => x.model === model).length;
     return acc;
@@ -83,7 +44,7 @@ export interface ModelCell { primary: number; secondary: number; total: number }
 export interface StatusSection { byModel: Record<Model, ModelCell>; total: number }
 export type StatusBreakdown = Record<Status, StatusSection>;
 
-// For each status (New/Used/Broken): per-model Primary/Secondary counts. On-hand only.
+// For each status (New/Used/Review/Breakdown): per-model Primary/Secondary counts. On-hand only.
 export function computeStatusBreakdown(machines: Machine[]): StatusBreakdown {
   const onHand = machines.filter((x) => x.location !== OUT);
   const out = {} as StatusBreakdown;

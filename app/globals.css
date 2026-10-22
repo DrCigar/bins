@@ -9,6 +9,7 @@
   --color-pos-line: #262626;
   --color-status-new: #3ccb7f;
   --color-status-used: #e6a531;
+  --color-status-review: #3b82f6;
   --color-status-broken: #ef4023;
   --animate-blink: blink 1.1s ease-in-out infinite;
   --animate-flash: flash 0.8s ease-in-out 6;
