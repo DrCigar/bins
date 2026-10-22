@@ -15,7 +15,7 @@ const dmSerif = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Register Locator — POS360",
+  title: "360 Register App — POS360",
   description: "Warehouse cash-register locator",
 };
 

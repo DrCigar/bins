@@ -25,6 +25,7 @@ export default function UnlockPage() {
     <div className="min-h-screen flex flex-col items-center justify-center gap-5">
       <Image src="/pos360-logo.png" alt="POS360" width={224} height={60} priority />
       <p className="text-xs tracking-[0.18em] text-neutral-500 -mt-2">SYSTEMS MADE SIMPLE</p>
+      <p className="text-lg font-semibold">360 Register App</p>
       <form action={onSubmit} className="flex flex-col gap-3 w-72">
         <input
           name="passcode"

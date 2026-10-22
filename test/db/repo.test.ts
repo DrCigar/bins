@@ -171,22 +171,22 @@ describe("repo.serializeBatch", () => {
     await expect(repo.serializeBatch(db, { ...args, customStart: "7777" }, 3)).rejects.toThrow(/7778/);
   });
 
-  it("clearLocation empties an area and drops its activity events", async () => {
+  it("clearLocation empties an area but KEEPS its activity events (permanent log)", async () => {
     await repo.serializeBatch(db, { ...args, destination: "Pre-Deployment" }, 4);
     await repo.checkIn(db, { ...checkInArgs, location: "A", slot: 1 }); // keep an unrelated unit
     const cleared = await repo.clearLocation(db, "Pre-Deployment");
     expect(cleared).toBe(4);
     expect((await repo.list(db)).every((m) => m.location !== "Pre-Deployment")).toBe(true);
-    expect(await repo.listSerializationEvents(db)).toHaveLength(0);
+    expect(await repo.listSerializationEvents(db)).toHaveLength(4); // events survive the clear
     expect(await repo.list(db)).toHaveLength(1); // the unrelated unit survives
   });
 
-  it("removing a serialized unit also clears its activity event", async () => {
+  it("removing a serialized unit KEEPS its activity event (permanent log)", async () => {
     const created = await repo.serializeBatch(db, args, 3);
     await repo.remove(db, created[0].id);
     expect(await repo.list(db)).toHaveLength(2);
     const events = await repo.listSerializationEvents(db);
-    expect(events).toHaveLength(2);
-    expect(events.map((e) => e.serial)).not.toContain(created[0].serial);
+    expect(events).toHaveLength(3); // event stays even though the unit is gone
+    expect(events.map((e) => e.serial)).toContain(created[0].serial);
   });
 });

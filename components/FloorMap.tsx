@@ -1,6 +1,8 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { Machine, PRE_DEPLOYMENT, OUTBOUND, INBOUND } from "@/lib/domain/types";
+import { Machine, STATUSES, PRE_DEPLOYMENT, OUTBOUND, INBOUND } from "@/lib/domain/types";
+import { STATUS_HEX } from "@/lib/domain/statusColors";
+import { StatusKey } from "./StatusKey";
 import {
   RACKS, rackCapacity, FLOOR, MAP_SCALE, ZONE_DIVIDER_Y,
   PRE_DEPLOYMENT_AREA, PRE_DEPLOYMENT_CAPACITY, OUTBOUND_AREA, INBOUND_AREA,
@@ -43,6 +45,8 @@ export function FloorMap({
     : null;
 
   return (
+    <div>
+    <StatusKey />
     <div ref={wrapRef} className="w-full">
     <div
       className="relative mx-auto bg-pos-surface2 border border-pos-line rounded-lg overflow-hidden"
@@ -84,20 +88,25 @@ export function FloorMap({
       <span className="absolute text-[9px] font-medium tracking-wider" style={{ left: s(330), top: s(143), color: "#9aa0aa" }}>STAGING</span>
 
       {RACKS.map((r) => {
-        const cap = rackCapacity(r.label);
-        const fill = cap ? Math.min(1, countAt(r.label) / cap) : 0;
+        const cap = rackCapacity(r.label) || 1;
+        const here = machines.filter((m) => m.location === r.label);
         const silver = r.material === "silver";
         const vertical = r.h >= r.w; // fill bottom-up for tall racks, left-to-right for wide ones
-        const barStyle = vertical
-          ? { left: 0, right: 0, bottom: 0, height: `${fill * 100}%` }
-          : { left: 0, top: 0, bottom: 0, width: `${fill * 100}%` };
+        // Stacked fill: one segment per status, sized by its share of capacity, in status order.
+        let acc = 0;
+        const segments = STATUSES.map((st) => {
+          const n = here.filter((m) => m.status === st).length;
+          const startFrac = acc / cap;
+          acc += n;
+          return { st, startFrac, sizeFrac: Math.min(n / cap, 1) };
+        }).filter((seg) => seg.sizeFrac > 0);
         return (
           <button
             key={r.label}
             onClick={() => onSelect(r.label)}
             onMouseEnter={() => setHover({ label: r.label, x: r.x, y: r.y })}
             onMouseLeave={() => setHover((h) => (h?.label === r.label ? null : h))}
-            title={`Rack ${r.label} — ${countAt(r.label)}/${cap}`}
+            title={`Rack ${r.label} — ${here.length}/${rackCapacity(r.label)}`}
             className="absolute rounded-[5px] flex items-center justify-center overflow-hidden"
             style={{
               left: s(r.x), top: s(r.y), width: s(r.w), height: s(r.h),
@@ -107,7 +116,18 @@ export function FloorMap({
               borderColor: silver ? "#b9bec8" : "rgba(255,255,255,0.25)",
             }}
           >
-            <span className="absolute" style={{ ...barStyle, background: "#ef4023" }} />
+            {segments.map((seg) => (
+              <span
+                key={seg.st}
+                className="absolute"
+                style={{
+                  background: STATUS_HEX[seg.st],
+                  ...(vertical
+                    ? { left: 0, right: 0, bottom: `${seg.startFrac * 100}%`, height: `${seg.sizeFrac * 100}%` }
+                    : { top: 0, bottom: 0, left: `${seg.startFrac * 100}%`, width: `${seg.sizeFrac * 100}%` }),
+                }}
+              />
+            ))}
             <span className="relative text-[11px] font-medium text-white" style={{ textShadow: "0 1px 2px rgba(0,0,0,0.7)" }}>{r.label}</span>
           </button>
         );
@@ -128,6 +148,7 @@ export function FloorMap({
           </div>
         </div>
       )}
+    </div>
     </div>
     </div>
   );

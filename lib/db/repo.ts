@@ -1,4 +1,4 @@
-import { eq, sql, inArray } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { machines, serializationEvents, manualCounts, MachineRow, SerializationEventRow, ManualCountRow } from "./schema";
 import { Machine, Model, Role, Status, ProductLine, SerializationEvent, OUT, isOpenArea } from "@/lib/domain/types";
 import { prefixFor, buildSerial, incrementSerial } from "@/lib/domain/serial";
@@ -60,12 +60,9 @@ export const update = (
   fields: Partial<Pick<MachineRow, "serial" | "model" | "role" | "status" | "productLine" | "assembledBy" | "notes">>,
 ) => patch(db, id, fields);
 
-// Delete a machine. If it was serialized, also drop its build-activity event so the
-// Activity report doesn't count units that were serialized in error.
+// Delete a machine. Its build-activity event is intentionally KEPT — the Activity log is a
+// permanent, append-only record of everything ever serialized, even units later removed.
 export const remove = async (db: AnyDb, id: number): Promise<void> => {
-  const rows = await db.select().from(machines).where(eq(machines.id, id));
-  const serial = rows[0]?.serial;
-  if (serial) await db.delete(serializationEvents).where(eq(serializationEvents.serial, serial));
   await db.delete(machines).where(eq(machines.id, id));
 };
 
@@ -102,12 +99,11 @@ export async function moveMany(db: AnyDb, ids: number[], location: string): Prom
   return targets.map((t) => t.id);
 }
 
-// Empty an area: delete every machine in `location` (and their activity events). Returns count removed.
+// Empty an area: delete every machine in `location`. Build-activity events are KEPT — the
+// Activity log stays a permanent record of what was serialized, even after an area is cleared.
 export async function clearLocation(db: AnyDb, location: string): Promise<number> {
   const here = (await list(db)).filter((m) => m.location === location);
   if (here.length === 0) return 0;
-  const serials = here.map((m) => m.serial).filter((s): s is string => Boolean(s));
-  if (serials.length) await db.delete(serializationEvents).where(inArray(serializationEvents.serial, serials));
   await db.delete(machines).where(eq(machines.location, location));
   return here.length;
 }
