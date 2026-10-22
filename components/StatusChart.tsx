@@ -1,13 +1,7 @@
 "use client";
-import { MODELS, STATUSES, Status } from "@/lib/domain/types";
+import { MODELS, STATUSES } from "@/lib/domain/types";
+import { STATUS_HEX as STATUS_COLOR } from "@/lib/domain/statusColors";
 import { StatusBreakdown } from "@/lib/domain/totals";
-
-const STATUS_COLOR: Record<Status, string> = {
-  New: "#3ccb7f",
-  Used: "#e6a531",
-  Review: "#3b82f6",
-  Breakdown: "#ef4023",
-};
 
 // Grouped bars: one group per model, a bar per status (on-hand counts).
 export function StatusChart({ breakdown }: { breakdown: StatusBreakdown }) {

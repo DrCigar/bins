@@ -1,13 +1,16 @@
 "use client";
 import { Machine, roleTag, isOpenArea, PRE_DEPLOYMENT } from "@/lib/domain/types";
 import { rackCapacity, rackCols, slotLabel, PRE_DEPLOYMENT_CAPACITY } from "@/lib/layout/warehouse";
+import { STATUS_HEX } from "@/lib/domain/statusColors";
 import { StatusBadge } from "./StatusBadge";
+import { StatusKey } from "./StatusKey";
 
 function FilledCard({ label, m, onClick, selected = false, highlight = false }: { label: string; m: Machine; onClick: () => void; selected?: boolean; highlight?: boolean }) {
   const missingSerial = !m.serial;
   return (
     <button
       onClick={onClick}
+      style={{ borderLeftColor: STATUS_HEX[m.status], borderLeftWidth: 5 }}
       className={`text-left rounded-md p-2 border bg-pos-surface hover:border-neutral-500 ${
         highlight ? "border-pos-vermilion animate-flash" : selected ? "border-pos-vermilion ring-1 ring-pos-vermilion" : missingSerial ? "border-status-broken animate-blink" : "border-pos-line"
       }`}
@@ -60,6 +63,7 @@ export function RackDetail({
         <h2 className="text-base font-medium mb-3">
           {label} <span className="text-neutral-500 text-sm">· {countLabel}</span>
         </h2>
+        <StatusKey />
         <div className="grid grid-cols-5 gap-2">
           {here.map((m) => (
             <FilledCard key={m.id} label={`#${m.id}`} m={m} selected={isSel(m)} highlight={isHl(m)} onClick={() => cardClick(m, null)} />
@@ -89,6 +93,7 @@ export function RackDetail({
       <h2 className="text-base font-medium mb-3">
         Rack {label} <span className="text-neutral-500 text-sm">· {here.length}/{capacity}</span>
       </h2>
+      <StatusKey />
       <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, maxWidth: cols <= 2 ? 260 : undefined }}>
         {slots.map((slotNum) => {
           const m = bySlot.get(slotNum) ?? null;
