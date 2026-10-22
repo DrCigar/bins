@@ -27,7 +27,8 @@ export const serialCounters = pgTable("serial_counters", {
 
 export const serializationEvents = pgTable("serialization_events", {
   id: serial("id").primaryKey(),
-  serial: text("serial").notNull(),
+  kind: text("kind").notNull().default("serialized"),
+  serial: text("serial"),
   productLine: text("product_line"),
   role: text("role").notNull(),
   model: text("model").notNull(),

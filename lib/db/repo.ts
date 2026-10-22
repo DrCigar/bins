@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { machines, serializationEvents, manualCounts, MachineRow, SerializationEventRow, ManualCountRow } from "./schema";
-import { Machine, Model, Role, Status, ProductLine, SerializationEvent, OUT, isOpenArea } from "@/lib/domain/types";
+import { Machine, Model, Role, Status, ProductLine, SerializationEvent, ActivityKind, OUT, isOpenArea } from "@/lib/domain/types";
 import { prefixFor, buildSerial, incrementSerial } from "@/lib/domain/serial";
 import { rackCapacity, areaCapacity } from "@/lib/layout/warehouse";
 
@@ -186,6 +186,7 @@ export async function serializeBatch(db: AnyDb, args: SerializeArgs, quantity: n
   // Append-only build-activity log (one event per serialized unit).
   await db.insert(serializationEvents).values(
     inserted.map((r: MachineRow) => ({
+      kind: "serialized" as const,
       serial: r.serial as string,
       productLine: args.productLine,
       role: args.role,
@@ -199,10 +200,22 @@ export async function serializeBatch(db: AnyDb, args: SerializeArgs, quantity: n
 
 const toEvent = (r: SerializationEventRow): SerializationEvent => ({
   ...r,
+  kind: (r.kind as ActivityKind) ?? "serialized",
   productLine: (r.productLine as ProductLine) ?? null,
   role: r.role as Role,
   model: r.model as Model,
 });
+
+// Append one activity event (permanent, append-only). Used for check-ins (kind "added").
+export async function logActivity(
+  db: AnyDb,
+  e: { kind: ActivityKind; serial: string | null; productLine: ProductLine | null; role: Role; model: Model; assembledBy: string | null },
+): Promise<void> {
+  await db.insert(serializationEvents).values({
+    kind: e.kind, serial: e.serial, productLine: e.productLine,
+    role: e.role, model: e.model, assembledBy: e.assembledBy,
+  });
+}
 
 export async function listSerializationEvents(db: AnyDb): Promise<SerializationEvent[]> {
   const rows = await db.select().from(serializationEvents);

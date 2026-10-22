@@ -21,7 +21,7 @@ beforeEach(async () => {
     );
     CREATE TABLE serial_counters (key text primary key, n integer not null);
     CREATE TABLE serialization_events (
-      id serial primary key, serial text not null, product_line text,
+      id serial primary key, kind text not null default 'serialized', serial text, product_line text,
       role text not null, model text not null, assembled_by text,
       serialized_at timestamptz not null default now()
     );
@@ -93,6 +93,15 @@ describe("repo.checkOutToStore", () => {
   });
 });
 
+describe("repo.logActivity", () => {
+  it("appends a check-in (added) event; serial is optional", async () => {
+    await repo.logActivity(db, { kind: "added", serial: null, productLine: "360 Pro", role: "Primary", model: "Matsuda", assembledBy: null });
+    const events = await repo.listSerializationEvents(db);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ kind: "added", serial: null, model: "Matsuda", role: "Primary" });
+  });
+});
+
 describe("repo.manualCounts", () => {
   it("upserts and lists manual off-site counts", async () => {
     await repo.setManualCount(db, "San Diego", "Matsuda", 5, 3);
@@ -154,7 +163,7 @@ describe("repo.serializeBatch", () => {
     await repo.serializeBatch(db, args, 3);
     const events = await repo.listSerializationEvents(db);
     expect(events).toHaveLength(3);
-    expect(events[0]).toMatchObject({ productLine: "360 Smoke", role: "Primary", model: "Matsuda" });
+    expect(events[0]).toMatchObject({ kind: "serialized", productLine: "360 Smoke", role: "Primary", model: "Matsuda" });
     expect(events[0].serial).toMatch(/^SMKP/);
   });
 

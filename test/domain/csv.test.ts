@@ -5,12 +5,12 @@ import type { Machine, SerializationEvent } from "@/lib/domain/types";
 describe("toSerializationCsv", () => {
   it("writes a header and one row per event", () => {
     const ev: SerializationEvent = {
-      id: 1, serial: "SMKP250423001", productLine: "360 Smoke", role: "Primary",
+      id: 1, kind: "serialized", serial: "SMKP250423001", productLine: "360 Smoke", role: "Primary",
       model: "Matsuda", assembledBy: "Thang", serializedAt: new Date(Date.UTC(2025, 3, 23)),
     };
     const lines = toSerializationCsv([ev]).trim().split("\n");
-    expect(lines[0]).toBe("serialized_at,serial,product_line,role,model,assembled_by");
-    expect(lines[1]).toContain("SMKP250423001,360 Smoke,Primary,Matsuda,Thang");
+    expect(lines[0]).toBe("serialized_at,type,serial,product_line,role,model,assembled_by");
+    expect(lines[1]).toContain("serialized,SMKP250423001,360 Smoke,Primary,Matsuda,Thang");
   });
 });
 

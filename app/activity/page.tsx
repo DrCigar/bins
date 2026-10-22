@@ -22,13 +22,17 @@ export default function ActivityPage() {
   const [checkIn, setCheckIn] = useState(false);
 
   const groups = groupSerializationByDay(events);
+  const serializedCount = events.filter((e) => e.kind !== "added").length;
+  const addedCount = events.filter((e) => e.kind === "added").length;
 
   return (
     <AppShell machines={machines} onSerialize={() => setSerialize(true)} onCheckIn={() => setCheckIn(true)}>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-base font-medium">Serialization activity</h2>
-          <p className="text-xs text-neutral-500">{events.length} unit{events.length === 1 ? "" : "s"} serialized, all time</p>
+          <h2 className="text-base font-medium">Activity log</h2>
+          <p className="text-xs text-neutral-500">
+            {events.length} event{events.length === 1 ? "" : "s"}, all time · {serializedCount} serialized · {addedCount} checked in
+          </p>
         </div>
         <a href="/api/export/serialization" className="text-sm px-3 py-1.5 rounded-md border border-pos-line hover:bg-neutral-900">
           Export activity CSV
@@ -42,12 +46,13 @@ export default function ActivityPage() {
           <div key={g.day}>
             <div className="flex items-baseline gap-3 mb-2">
               <h3 className="text-sm font-medium">{prettyDay(g.day)}</h3>
-              <span className="text-xs text-neutral-500">{g.events.length} serialized</span>
+              <span className="text-xs text-neutral-500">{g.events.length} event{g.events.length === 1 ? "" : "s"}</span>
             </div>
             <table className="w-full text-sm border border-pos-line">
               <thead>
                 <tr className="bg-pos-surface2 text-left text-neutral-400">
                   <th className="p-2 font-medium">Time</th>
+                  <th className="p-2 font-medium">Type</th>
                   <th className="p-2 font-medium">Serial</th>
                   <th className="p-2 font-medium">Product</th>
                   <th className="p-2 font-medium">Model</th>
@@ -58,8 +63,13 @@ export default function ActivityPage() {
                 {g.events.map((e) => (
                   <tr key={e.id} className="border-t border-pos-line">
                     <td className="p-2 text-neutral-400">{prettyTime(e.serializedAt)}</td>
-                    <td className="p-2 font-medium">{e.serial}</td>
-                    <td className="p-2">{e.productLine} <span className="text-neutral-400">{roleTag(e.role)}</span></td>
+                    <td className="p-2">
+                      <span className={`text-[11px] px-2 py-0.5 rounded ${e.kind === "added" ? "bg-status-review/15 text-status-review" : "bg-status-new/15 text-status-new"}`}>
+                        {e.kind === "added" ? "Checked in" : "Serialized"}
+                      </span>
+                    </td>
+                    <td className="p-2 font-medium">{e.serial ?? <span className="text-neutral-600">—</span>}</td>
+                    <td className="p-2">{e.productLine ?? "—"} <span className="text-neutral-400">{roleTag(e.role)}</span></td>
                     <td className="p-2 text-neutral-400">{e.model}</td>
                     <td className="p-2 text-neutral-400">{e.assembledBy ?? "—"}</td>
                   </tr>

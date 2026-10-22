@@ -1,6 +1,6 @@
 "use client";
-import { Machine, MODELS, STATUSES, Status } from "@/lib/domain/types";
-import { computeLineTotals, computeStatusBreakdown } from "@/lib/domain/totals";
+import { Machine, STATUSES, Status } from "@/lib/domain/types";
+import { computeLineTotals, computeStatusBreakdown, computeStatusCombos, LINE_ROLES } from "@/lib/domain/totals";
 import { StatusChart } from "./StatusChart";
 
 const STATUS_TEXT: Record<Status, string> = {
@@ -13,6 +13,7 @@ const STATUS_TEXT: Record<Status, string> = {
 export function TotalsTable({ machines }: { machines: Machine[] }) {
   const { rows, grand } = computeLineTotals(machines);
   const breakdown = computeStatusBreakdown(machines);
+  const combos = computeStatusCombos(machines);
 
   return (
     <div className="flex flex-col gap-6">
@@ -48,39 +49,31 @@ export function TotalsTable({ machines }: { machines: Machine[] }) {
         <StatusChart breakdown={breakdown} />
       </div>
 
-      {STATUSES.map((status) => {
-        const section = breakdown[status];
-        return (
-          <div key={status}>
-            <p className={`text-sm font-medium mb-2 ${STATUS_TEXT[status]}`}>
-              {status} <span className="text-neutral-500 font-normal">· {section.total} on hand</span>
-            </p>
-            <table className="w-full text-sm border border-pos-line max-w-md">
-              <thead>
-                <tr className="bg-pos-surface2 text-left text-neutral-400">
-                  <th className="p-2 font-medium">Model</th>
-                  <th className="p-2 font-medium">Primary</th>
-                  <th className="p-2 font-medium">Secondary</th>
-                  <th className="p-2 font-medium">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {MODELS.map((model, i) => {
-                  const c = section.byModel[model];
-                  return (
-                    <tr key={model} className={i % 2 ? "bg-white/[0.03]" : ""}>
-                      <td className="p-2">{model}</td>
-                      <td className="p-2">{c.primary}</td>
-                      <td className="p-2">{c.secondary}</td>
-                      <td className="p-2 font-medium">{c.total}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        );
-      })}
+      <div>
+        <p className="text-xs text-neutral-500 mb-2">By status &amp; product line</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          {STATUSES.map((status) => {
+            const section = combos[status];
+            return (
+              <div key={status} className="border border-pos-line rounded-md overflow-hidden">
+                <p className={`text-sm font-medium px-3 py-2 bg-pos-surface2 ${STATUS_TEXT[status]}`}>
+                  {status} <span className="text-neutral-500 font-normal">· {section.total}</span>
+                </p>
+                <table className="w-full text-sm">
+                  <tbody>
+                    {LINE_ROLES.map((lr, i) => (
+                      <tr key={lr.label} className={i % 2 ? "bg-white/[0.03]" : ""}>
+                        <td className="px-3 py-1.5 text-neutral-300 whitespace-nowrap">{lr.label}</td>
+                        <td className="px-3 py-1.5 text-right font-medium">{section.counts[i]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

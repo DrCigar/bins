@@ -56,7 +56,7 @@ export async function checkInAction(input: {
   try {
     const db = await getReadyDb();
     await assertAreaHasRoom(db, input.location);
-    await repo.checkIn(db, {
+    const created = await repo.checkIn(db, {
       serial: input.serial?.trim() || null,
       model: assertEnum(MODELS, input.model, "model") as Model,
       role: assertEnum(ROLES, input.role, "role") as Role,
@@ -67,8 +67,18 @@ export async function checkInAction(input: {
       location: input.location,
       slot: input.slot,
     });
+    // Log the check-in to the permanent activity history (best-effort — never block the check-in).
+    try {
+      await repo.logActivity(db, {
+        kind: "added", serial: created.serial, productLine: created.productLine,
+        role: created.role, model: created.model, assembledBy: created.assembledBy,
+      });
+    } catch (err) {
+      console.error("activity log (check-in) failed:", err);
+    }
     revalidatePath("/");
     revalidatePath("/totals");
+    revalidatePath("/activity");
     return { ok: true };
   } catch (e) {
     return { error: friendlyError(e) };

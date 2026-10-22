@@ -57,10 +57,15 @@ export interface Machine {
 
 export const roleTag = (r: Role): string => (r === "Primary" ? "(P)" : "(S)");
 
-// Append-only record of each serialize event (permanent build-activity history).
+// How a unit entered the system: serialized in-house, or checked in (added).
+export const ACTIVITY_KINDS = ["serialized", "added"] as const;
+export type ActivityKind = (typeof ACTIVITY_KINDS)[number];
+
+// Append-only record of each activity event (permanent history — never deleted).
 export interface SerializationEvent {
   id: number;
-  serial: string;
+  kind: ActivityKind;
+  serial: string | null; // null allowed for check-ins with no serial
   productLine: ProductLine | null;
   role: Role;
   model: Model;

@@ -40,6 +40,23 @@ export function computeLineTotals(machines: Machine[]): LineTotals {
   return { rows, grand, byModel };
 }
 
+// The four product-line x role combos, in display order.
+export const LINE_ROLES = PRODUCT_LINES.flatMap((line) => ROLES.map((role) => ({ line, role, label: `${line} ${role}` })));
+export interface StatusComboSection { counts: number[]; total: number } // counts aligned to LINE_ROLES
+export type StatusComboBreakdown = Record<Status, StatusComboSection>;
+
+// For each status: a count for each product-line x role combo (on-hand only).
+export function computeStatusCombos(machines: Machine[]): StatusComboBreakdown {
+  const onHand = machines.filter((x) => x.location !== OUT);
+  const out = {} as StatusComboBreakdown;
+  for (const status of STATUSES) {
+    const subset = onHand.filter((x) => x.status === status);
+    const counts = LINE_ROLES.map(({ line, role }) => subset.filter((x) => x.productLine === line && x.role === role).length);
+    out[status] = { counts, total: counts.reduce((a, b) => a + b, 0) };
+  }
+  return out;
+}
+
 export interface ModelCell { primary: number; secondary: number; total: number }
 export interface StatusSection { byModel: Record<Model, ModelCell>; total: number }
 export type StatusBreakdown = Record<Status, StatusSection>;

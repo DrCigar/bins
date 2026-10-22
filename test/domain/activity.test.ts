@@ -3,7 +3,7 @@ import { groupSerializationByDay } from "@/lib/domain/activity";
 import type { SerializationEvent } from "@/lib/domain/types";
 
 const ev = (over: Partial<SerializationEvent>): SerializationEvent => ({
-  id: 1, serial: "SMKP250423001", productLine: "360 Smoke", role: "Primary",
+  id: 1, kind: "serialized", serial: "SMKP250423001", productLine: "360 Smoke", role: "Primary",
   model: "Matsuda", assembledBy: "Thang", serializedAt: new Date(Date.UTC(2025, 3, 23, 10)), ...over,
 });
 

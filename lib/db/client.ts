@@ -48,13 +48,18 @@ const DDL_COUNTERS = sql`CREATE TABLE IF NOT EXISTS serial_counters (
 
 const DDL_EVENTS = sql`CREATE TABLE IF NOT EXISTS serialization_events (
   id serial PRIMARY KEY,
-  serial text NOT NULL,
+  kind text NOT NULL DEFAULT 'serialized',
+  serial text,
   product_line text,
   role text NOT NULL,
   model text NOT NULL,
   assembled_by text,
   serialized_at timestamptz NOT NULL DEFAULT now()
 )`;
+
+// Backfill for tables created before check-in logging: add `kind`, allow null serials.
+const DDL_EVENTS_KIND = sql`ALTER TABLE serialization_events ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'serialized'`;
+const DDL_EVENTS_SERIAL_NULLABLE = sql`ALTER TABLE serialization_events ALTER COLUMN serial DROP NOT NULL`;
 
 const DDL_MANUAL = sql`CREATE TABLE IF NOT EXISTS manual_counts (
   location text NOT NULL,
@@ -75,6 +80,8 @@ export async function getReadyDb(): Promise<DrizzleDb> {
       await db.execute(DDL_ALTER);
       await db.execute(DDL_COUNTERS);
       await db.execute(DDL_EVENTS);
+      await db.execute(DDL_EVENTS_KIND);
+      await db.execute(DDL_EVENTS_SERIAL_NULLABLE);
       await db.execute(DDL_MANUAL);
       await db.execute(DML_STATUS_RENAME);
     })().catch((err) => {

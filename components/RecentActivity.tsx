@@ -35,12 +35,15 @@ export function RecentActivity({ onClose }: { onClose: () => void }) {
             {recent.map((e) => (
               <li key={e.id} className="px-3 py-2">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-xs font-medium text-white truncate">{e.serial}</span>
+                  <span className="text-xs font-medium text-white truncate">{e.serial ?? e.model}</span>
                   <span className="text-[10px] text-neutral-500 shrink-0">{fmtTime(e.serializedAt)}</span>
                 </div>
-                <p className="text-[11px] text-neutral-400 truncate">
+                <p className="text-[11px] text-neutral-400 truncate flex items-center gap-1.5">
+                  <span className={e.kind === "added" ? "text-status-review" : "text-status-new"}>
+                    {e.kind === "added" ? "checked in" : "serialized"}
+                  </span>
+                  <span className="text-neutral-600">·</span>
                   {e.model} <span className="text-neutral-500">{roleTag(e.role)}</span>
-                  {e.assembledBy ? <span className="text-neutral-600"> · {e.assembledBy}</span> : null}
                 </p>
               </li>
             ))}

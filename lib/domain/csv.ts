@@ -19,11 +19,11 @@ export function toCsv(machines: Machine[]): string {
   return [HEADER.join(","), ...rows].join("\n") + "\n";
 }
 
-const EVENT_HEADER = ["serialized_at", "serial", "product_line", "role", "model", "assembled_by"] as const;
+const EVENT_HEADER = ["serialized_at", "type", "serial", "product_line", "role", "model", "assembled_by"] as const;
 
 export function toSerializationCsv(events: SerializationEvent[]): string {
   const rows = events.map((e) =>
-    [e.serializedAt, e.serial, e.productLine, e.role, e.model, e.assembledBy].map(esc).join(","),
+    [e.serializedAt, e.kind, e.serial, e.productLine, e.role, e.model, e.assembledBy].map(esc).join(","),
   );
   return [EVENT_HEADER.join(","), ...rows].join("\n") + "\n";
 }

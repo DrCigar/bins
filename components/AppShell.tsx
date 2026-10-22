@@ -46,10 +46,16 @@ export function AppShell({
 
   return (
     <div>
-      <header className="flex flex-col items-center gap-3 px-4 py-3 bg-black border-l-4 border-pos-vermilion">
-        <Image src="/pos360-logo.png" alt="POS360" width={149} height={40} priority className="mx-auto" />
-        <div className="flex w-full flex-wrap items-center justify-center gap-3 sm:justify-between">
-          <SerialSearch machines={machines} autoFocus={autoFocusSearch} />
+      <header className="px-4 py-2.5 bg-gradient-to-b from-[#0d0d10] to-[#0a0a0c] border-b border-white/10 border-l-4 border-pos-vermilion flex flex-col gap-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5">
+          <div className="flex items-center gap-3 shrink-0">
+            <Image src="/pos360-logo.png" alt="POS360" width={120} height={32} priority className="h-7 w-auto" />
+            <div className="w-px h-6 bg-white/15" />
+            <div className="leading-tight">
+              <div className="hidden sm:block text-[10px] font-semibold tracking-[0.14em] text-neutral-400">SUPPLY CHAIN OPERATIONS</div>
+              <div className="text-[15px] font-extrabold tracking-tight"><span className="text-pos-vermilion">360</span> Register App</div>
+            </div>
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
           <button
             onClick={onSerialize}
@@ -93,7 +99,11 @@ export function AppShell({
               Activity
             </button>
           )}
+          <span className="hidden xl:inline text-[11px] font-bold tracking-[0.12em] text-pos-vermilion whitespace-nowrap">POWERED BY POS360</span>
           </div>
+        </div>
+        <div className="flex justify-center sm:justify-start">
+          <SerialSearch machines={machines} autoFocus={autoFocusSearch} />
         </div>
       </header>
       <nav className="flex gap-5 px-4 bg-black border-b border-pos-line pt-1">
