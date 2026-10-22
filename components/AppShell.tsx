@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { SerialSearch } from "./SerialSearch";
 import { ScanDialog } from "./ScanDialog";
+import { RecentActivity } from "./RecentActivity";
 import { Machine } from "@/lib/domain/types";
 
 export function AppShell({
@@ -18,6 +19,20 @@ export function AppShell({
 }) {
   const path = usePathname();
   const [scanOpen, setScanOpen] = useState(false);
+
+  // Recent-activity rail: wide screens only, open/closed remembered per device.
+  const [activityOpen, setActivityOpen] = useState(true);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("rl_activity_open");
+      if (v !== null) setActivityOpen(v === "1");
+    } catch {}
+  }, []);
+  const setActivity = (open: boolean) => {
+    setActivityOpen(open);
+    try { localStorage.setItem("rl_activity_open", open ? "1" : "0"); } catch {}
+  };
+  const showRail = activityOpen && path !== "/activity";
   const tab = (href: string, label: string) => (
     <Link
       href={href}
@@ -63,6 +78,21 @@ export function AppShell({
           >
             Export CSV
           </a>
+          {path !== "/activity" && (
+            <button
+              onClick={() => setActivity(!activityOpen)}
+              title="Toggle the recent-activity panel"
+              aria-pressed={activityOpen}
+              className={`hidden lg:inline-flex text-sm font-medium px-3 py-1.5 rounded-md border items-center gap-1.5 ${
+                activityOpen ? "border-pos-vermilion text-white" : "border-pos-line text-neutral-300 hover:bg-neutral-900"
+              }`}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+              </svg>
+              Activity
+            </button>
+          )}
           </div>
         </div>
       </header>
@@ -71,7 +101,10 @@ export function AppShell({
         {tab("/totals", "Totals")}
         {tab("/activity", "Activity")}
       </nav>
-      <main className="p-2 sm:p-4">{children}</main>
+      <div className="flex">
+        <main className="flex-1 min-w-0 p-2 sm:p-4">{children}</main>
+        {showRail && <RecentActivity onClose={() => setActivity(false)} />}
+      </div>
       <ScanDialog open={scanOpen} onClose={() => setScanOpen(false)} machines={machines} />
     </div>
   );
